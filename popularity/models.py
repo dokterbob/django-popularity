@@ -6,20 +6,50 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
+from django.conf import settings
+# Characteristic age
+CHARAGE = float(getattr(settings, 'CHARAGE', 3600))
+HALFLOGSCALING = 0.693147 # ln(0.5)
+
+# This scaling is broken, still
+#MINNOVELTY = float(getattr(settings, 'MINNOVELTY', 0.0))
+#NOVELTYSCALING = 1.0/(1.0-MINNOVELTY)
+
 class ViewTrackerManager(models.Manager):
     """ Manager methods to do stuff like:
         ViewTracker.objects.get_views_for_model(MyModel) 
     """
         
     def select_age(self):
-        """ Adds age with regards to refdate (default: now) to the QuerySet
+        """ Adds age with regards to NOW to the QuerySet
             fields. """
         
-        from django.conf import settings
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'  
                         
         return self.extra(select={'age': 'NOW() - first_view'})
     
+    def select_relviews(self):
+        """ Adds a normalized view count to the QuerySet. """
+        return self.extra(select={'relviews': 'views/(SELECT MAX(views) FROM popularity_viewtracker)'})
+
+    def select_novelty(self):
+        """ Compute novelty. """
+        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        
+        #return self.extra(select={'novelty' : '(1.0/%(NOVELTYSCALING)f)*EXP(%(HALFLOGSCALING)f*((NOW() - first_view)/3600))+%(MINNOVELTY)f' % myvars})
+        
+        #return self.extra(select={'novelty' : '(%f*EXP(%f*(NOW() - first_view)/%f)+%f)' % (NOVELTYSCALING, HALFLOGSCALING, CHARAGE, MINNOVELTY)})
+        return self.extra(select={'novelty' : 'EXP(%d*(NOW() - first_view)/%d)' % (HALFLOGSCALING, CHARAGE)})
+
+    
+    def select_popularity(self):
+        """ Compute popularity. """
+        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        
+        params = {'popularity' : 'views/(SELECT MAX(views) FROM popularity_viewtracker)*EXP(-(NOW() - first_view)/%d)' % CHARAGE}
+        
+        return self.extra(select=params)
+        
     def get_recently_viewed(self, limit=10):
         """ Returns the most recently viewed objects. """
         return self.order_by('-last_view').limit(limit)
@@ -80,7 +110,7 @@ class ViewTracker(models.Model):
     
     class Meta:
         get_latest_by = 'last_view'
-        ordering = ['views', '-last_view', 'first_view']
+        ordering = ['-views', '-last_view', 'first_view']
         unique_together = ('content_type', 'object_id')
     
     def __unicode__(self):
