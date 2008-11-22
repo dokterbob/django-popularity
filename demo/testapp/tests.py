@@ -60,24 +60,24 @@ class PopularityTestCase(unittest.TestCase):
             self.assert_(tracker.last_view > tracker.first_view)
     
     def testAge(self):
-        new = TestObject(title='Obj q')
-        new.save()
+        from django.conf import settings
+        if settings.DATABASE_ENGINE == 'mysql':
+            new = TestObject(title='Obj q')
+            new.save()
         
-        viewtracker = ViewTracker.add_view_for(new)
-        first_view = viewtracker.first_view
+            viewtracker = ViewTracker.add_view_for(new)
+            first_view = viewtracker.first_view
         
-        sleep(1)
+            sleep(1)
         
-        ViewTracker.add_view_for(new)
+            ViewTracker.add_view_for(new)
         
-        last_view = ViewTracker.objects.get_for_object(new).last_view
+            last_view = ViewTracker.objects.get_for_object(new).last_view
                 
-        from datetime import datetime
-        nu = datetime.now()
+            from datetime import datetime
+            nu = datetime.now()
+            calc_age = nu - first_view
         
-        age = ViewTracker.objects.select_age(refdate=nu).filter(pk=viewtracker.pk)[0].age
+            age = ViewTracker.objects.select_age().filter(pk=viewtracker.pk)[0].age
         
-        self.assertEqual((nu-first_view).seconds, age)
-
-        from django.db import connection
-        logging.debug(connection.queries)
+            self.assertEqual(calc_age.seconds, age)

@@ -10,16 +10,15 @@ class ViewTrackerManager(models.Manager):
     """ Manager methods to do stuff like:
         ViewTracker.objects.get_views_for_model(MyModel) 
     """
-    
-    def select_age(self, refdate=None):
+        
+    def select_age(self):
         """ Adds age with regards to refdate (default: now) to the QuerySet
             fields. """
-        if not refdate:
-            refdate = datetime.now()
-                
-        select_string = "first_view - '%s'" % refdate
         
-        return self.extra(select={'age': select_string})
+        from django.conf import settings
+        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'  
+                        
+        return self.extra(select={'age': 'NOW() - first_view'})
     
     def get_recently_viewed(self, limit=10):
         """ Returns the most recently viewed objects. """
