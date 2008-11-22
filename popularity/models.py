@@ -16,8 +16,8 @@ class ViewTrackerManager(models.Manager):
             fields. """
         if not refdate:
             refdate = datetime.now()
-        
-        select_string = 'first_view - %s' % refdate
+                
+        select_string = "first_view - '%s'" % refdate
         
         return self.extra(select={'age': select_string})
     
@@ -60,9 +60,6 @@ class ViewTrackerManager(models.Manager):
             ct = ContentType.objects.get_for_model(obj.__class__)
             
             qs = qs | self.filter(content_type=ct, object_id=obj.pk)
-            logging.debug(self.filter(content_type=ct, object_id=obj.pk))
-            logging.debug(qs)
-            #logging.debug(ViewTracker.objects.all())
         
         return qs
 
@@ -93,7 +90,7 @@ class ViewTracker(models.Model):
     def increment(self):
         """ This increments my view count.
             TODO: optimize in SQL. """
-        logging.debug('Incrementing views for %s from %d to %d' % (self.content_object, self.views, self.views+1))
+        #logging.debug('Incrementing views for %s from %d to %d' % (self.content_object, self.views, self.views+1))
         self.views = self.views + 1
         self.save()
     
@@ -113,6 +110,8 @@ class ViewTracker(models.Model):
         viewtracker = cls.objects.get_for_object(content_object, create=True)
         
         viewtracker.increment()
+        
+        return viewtracker
     
     @classmethod
     def get_views_for(cls, content_object):

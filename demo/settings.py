@@ -14,7 +14,9 @@ MANAGERS = ADMINS
 
 if DEBUG:
     DATABASE_ENGINE = 'sqlite3'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-    DATABASE_NAME = path.join(PROJECT_ROOT, 'database.sqlite')             # Or path to database file if using sqlite3.
+    DATABASE_NAME = path.join(PROJECT_ROOT, 'database.sqlite')             #
+    #TEST_DATABASE_NAME =  path.join(PROJECT_ROOT, 'test-database.sqlite')   
+    # Or path to database file if using sqlite3.
 else:
     assert False, 'Database not configured!'
     DATABASE_ENGINE = 'mysql'
