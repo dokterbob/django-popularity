@@ -103,5 +103,6 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django_extensions',
     'popularity',
+    'testapp'
 )
 
