@@ -1,12 +1,16 @@
 =================
-django-popularity
+Django Popularity
 =================
 
 What is it?
 ===========
-The pluggable django-popularity makes it very easy to track the amount of views for objects, and generate popularity listings based upon that.
+The pluggable django-popularity makes it very easy to track the amount of
+views for objects, and generate popularity listings based upon that.
 
-Right now it has a measure for view counts, relative view counts, novelty and popularity. The latter is still to be tested. Soon to be expected: randomness and the ability to sort by a combination of novelty, view counts, randomness and view count.
+Right now it has a measure for view counts, relative view counts, novelty and
+popularity. The latter is still to be tested. Soon to be expected: randomness
+and the ability to sort by a combination of novelty, view counts, randomness
+and view count.
 
 Status
 ======
@@ -15,7 +19,8 @@ Also, please note that as of now we have about zero documentation.
 
 Requirements
 ============
-Currently, this is only tested for MySQL. It might also work for PostgresSQL and Oracle though.
+Currently, this is only tested for MySQL. It might also work for PostgresSQL
+and Oracle though.
 
 Installation
 ============
@@ -29,12 +34,12 @@ Installation
 	cp -r popularity $APPDIR/
 	cp -r demo/testapp $APPDIR/
     
-    (Here ``$APPDIR`` is wherever you throw the applications belonging to your    
+    (Here `$APPDIR` is wherever you throw the applications belonging to your    
     project).
     
-3)  Add popularity and testapp to ``INSTALLED_APPS`` in settings.py.
+3)  Add popularity and testapp to `INSTALLED_APPS` in settings.py.
 
-    Optionally, use the variable ``CHARAGE`` to the characteristic number of 
+    Optionally, use the variable `CHARAGE` to the characteristic number of 
     seconds after which an object grows 'twice as old'.
     
 4)  Create required data structure::
@@ -59,21 +64,24 @@ Installation
 
 Usage
 =====
-You can use the view information in several different ways. Best is to look at models.py in the popularity folder and in tests.py in testapp. But I'll give some examples here.
+You can use the view information in several different ways. Best is to look at
+models.py in the popularity folder and in tests.py in testapp. But I'll give
+some examples here.
 
 ``ViewTracker.objects.select_age().order_by('age').limit(10)``
---------------------------------------------------------------
-This yields the 10 newest objects on your site, meaning the 10 objects which have the most recent first view. Each element in the QuerySet has an extra field 'age' with the difference between the first and the last view of the object.
+    This yields the 10 newest objects on your site, meaning the 10 objects
+    which have the most recent first view. Each element in the QuerySet has an
+    extra field 'age' with the difference between the first and the last view
+    of the object.
 
 ``ViewTracker.get_recently_viewed(limit=10)``
----------------------------------------------
-This yields the 10 most recently viewed objects.
+    This yields the 10 most recently viewed objects.
 
 ``ViewTracker.get_for_model(<mymodel>)``, ``ViewTracker.get_for_models(*<mymodels>)``
--------------------------------------------------------------------------------------
-This filters out the views for ``<mymodel>`` respectively the list ``*<mymodels>``.
+    This filters out the views for ``<mymodel>`` respectively the list ``*<mymodels>``.
 
-Other functions will only become interesting at a later stage in development, but you can already start logging now and choose to use them later.
+Other functions will only become interesting at a later stage in development,
+but you can already start logging now and choose to use them later.
 
 License
 =======
