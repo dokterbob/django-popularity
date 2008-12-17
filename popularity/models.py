@@ -19,19 +19,26 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         from math import log
         logscaling = log(0.5)
 
-        self._SQL_AGE ='(NOW() - first_view)'    
+        self._SQL_AGE ='(NOW() - first_view)'
         self._SQL_NOVELTY = 'EXP(%(logscaling)s * %(age)s/%(charage)s)' % {'logscaling' : logscaling, 
                                                                            'age'        : self._SQL_AGE, 
                                                                            'charage'    : CHARAGE }
         self._SQL_RELVIEWS = '(views/%d)'
         self._SQL_POPULARITY = '(relviews * novelty)'
+    
+    def _add_extra(self, field, sql):
+        assert self.query.can_filter(), \
+                "Cannot change a query once a slice has been taken"
+        clone = self._clone()
+        clone.query.add_extra({field:sql}, None, None, None, None, None)
+        return clone
         
     def select_age(self):
         """ Adds age with regards to NOW to the QuerySet
             fields. """
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'  
                         
-        return self.extra(select={'age' : self._SQL_AGE})
+        return self._add_extra('age', self._SQL_AGE)
         
     def select_relviews(self, relative_to=None):
         """ Adds a normalized view count to the QuerySet. """
@@ -41,14 +48,13 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             
         maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
         
-        return self.extra(select={'relviews' : self._SQL_RELVIEWS % maxviews })
+        return self._add_extra('relviews', self._SQL_RELVIEWS % maxviews)
 
     def select_novelty(self):
         """ Compute novelty. """
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
         
-        return self.extra(select={'age'     : self._SQL_AGE,
-                                  'novelty' : self._SQL_NOVELTY})
+        return self.select_age()._add_extra('novelty', self._SQL_NOVELTY)
     
     def select_popularity(self, relative_to=None):
         """ Compute popularity. """
@@ -58,11 +64,8 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             relative_to = self
             
         maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
-        
-        return self.extra(select={'relviews'   : self._SQL_RELVIEWS % maxviews, 
-                                  'age'        : self._SQL_AGE, 
-                                  'novelty'    : self._SQL_NOVELTY,
-                                  'popularity' : self._SQL_POPULARITY })
+
+        return self.select_novelty().select_relviews()._add_extra('popularity', self._SQL_POPULARITY)
         
     def get_recently_viewed(self, limit=10):
         """ Returns the most recently viewed objects. """
