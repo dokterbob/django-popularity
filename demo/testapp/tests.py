@@ -7,7 +7,7 @@ from popularity.models import *
 import random
 from datetime import datetime
 
-REPEAT_COUNT = 10
+REPEAT_COUNT = 3
 MAX_SECONDS = 2
 
 class PopularityTestCase(unittest.TestCase):
@@ -91,13 +91,13 @@ class PopularityTestCase(unittest.TestCase):
         
                 db_age = (datetime.now()-first_view).seconds
                 
-                try:
-                    self.assertEqual(age, db_age)
-                    self.assertEqual(db_age, calc_age)
-                    self.assertEqual(age, calc_age)
-                except:
-                    import ipdb
-                    ipdb.set_trace()
+                #try:
+                self.assert_(abs(age - db_age) < 1)
+                self.assert_(abs(age - calc_age) < 1)
+                self.assertEqual(db_age, calc_age)
+                #except:
+                #    import ipdb
+                #    ipdb.set_trace()
                     
     
     def testRelviews(self):
@@ -129,4 +129,4 @@ class PopularityTestCase(unittest.TestCase):
             sleep(CHARAGE)
             
             novelty = ViewTracker.objects.select_novelty().filter(pk=viewtracker.pk)[0].novelty
-            self.assertAlmostEquals(float(novelty), 0.5, 1)
+            self.assertAlmostEquals(float(novelty), 0.5, 1, 'novelty=%f != 0.5' % novelty)
