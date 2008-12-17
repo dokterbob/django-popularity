@@ -20,14 +20,12 @@ Currently, this is only tested for MySQL. It might also work for PostgresSQL and
 Installation
 ============
 1)  Get the latest version from the repository
-
-    git clone git://github.com/dokterbob/django-popularity.git 
+    | git clone git://github.com/dokterbob/django-popularity.git 
     
 2)  Copy the popularity and testapp directories to your application tree
-
-    cd django-popularity
-    cp -r popularity $APPDIR/
-    cp -r demo/testapp $APPDIR/
+    | cd django-popularity
+    | cp -r popularity $APPDIR/
+    | cp -r demo/testapp $APPDIR/
     
 3)  Add popularity and testapp to INSTALLED_APPS in settings.py.
 
@@ -35,19 +33,16 @@ Installation
     seconds after which an object grows 'twice as old'.
     
 4)  Create required data structure
-
-    cd $APPDIR
-    ./manage.py syncdb
+    | cd $APPDIR
+    | ./manage.py syncdb
 5)  Run the unittests to see if it all makes sense
-
-    ./manage.py test
-    (If this fucks up, please contact me!)
+    | ./manage.py test
+    | (If this fucks up, please contact me!)
     
 6)  Make sure that for every method where you view an object you add the 
     following code (replace <viewed_object> by whatever you are viewing)
-    
-    from popularity.models import ViewTracker
-    ViewTracker.add_view_for(<viewed_object>)
+    | from popularity.models import ViewTracker
+    | ViewTracker.add_view_for(<viewed_object>)
     
 7)  You're done! Views should be tracked from now! Go whiiiiiiiiiiiiiiii!
     :D
