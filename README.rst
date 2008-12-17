@@ -29,12 +29,12 @@ Installation
 	cp -r popularity $APPDIR/
 	cp -r demo/testapp $APPDIR/
     
-    (Here $APPDIR is wherever you throw the applications belonging to your    
+    (Here ``$APPDIR`` is wherever you throw the applications belonging to your    
     project).
     
-3)  Add popularity and testapp to INSTALLED_APPS in settings.py.
+3)  Add popularity and testapp to ``INSTALLED_APPS`` in settings.py.
 
-    Optionally, use the variable CHARAGE to the characteristic number of 
+    Optionally, use the variable ``CHARAGE`` to the characteristic number of 
     seconds after which an object grows 'twice as old'.
     
 4)  Create required data structure::
@@ -62,16 +62,16 @@ Usage
 You can use the view information in several different ways. Best is to look at models.py in the popularity folder and in tests.py in testapp. But I'll give some examples here.
 
 ``ViewTracker.objects.select_age().order_by('age').limit(10)``
-----------------------------------------------------------
+--------------------------------------------------------------
 This yields the 10 newest objects on your site, meaning the 10 objects which have the most recent first view. Each element in the QuerySet has an extra field 'age' with the difference between the first and the last view of the object.
 
 ``ViewTracker.get_recently_viewed(limit=10)``
------------------------------------------
+---------------------------------------------
 This yields the 10 most recently viewed objects.
 
 ``ViewTracker.get_for_model(<mymodel>)``, ``ViewTracker.get_for_models(*<mymodels>)``
------------------------------------------------------------------------------
-This filters out the views for <mymodel> respectively the list *<mymodels>.
+-------------------------------------------------------------------------------------
+This filters out the views for ``<mymodel>`` respectively the list ``*<mymodels>``.
 
 Other functions will only become interesting at a later stage in development, but you can already start logging now and choose to use them later.
 
