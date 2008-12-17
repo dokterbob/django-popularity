@@ -13,6 +13,10 @@ Status
 We are nearing production stage, let's call it a beta. ;)
 Also, please note that as of now we have about zero documentation.
 
+Requirements
+============
+Currently, this is only tested for MySQL. It might also work for PostgresSQL and Oracle though.
+
 License
 =======
 The django-agenda app is released 
