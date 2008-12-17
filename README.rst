@@ -19,9 +19,9 @@ Currently, this is only tested for MySQL. It might also work for PostgresSQL and
 
 Installation
 ============
-1)  Get the latest version from the repository
+1)  Get the latest version from the repository::
 
-    ``git clone git://github.com/dokterbob/django-popularity.git``
+	git clone git://github.com/dokterbob/django-popularity.git
     
 2)  Copy the popularity and testapp directories to your application tree::
 
@@ -61,15 +61,15 @@ Usage
 =====
 You can use the view information in several different ways. Best is to look at models.py in the popularity folder and in tests.py in testapp. But I'll give some examples here.
 
-ViewTracker.objects.select_age().order_by('age').limit(10)
+``ViewTracker.objects.select_age().order_by('age').limit(10)``
 ----------------------------------------------------------
 This yields the 10 newest objects on your site, meaning the 10 objects which have the most recent first view. Each element in the QuerySet has an extra field 'age' with the difference between the first and the last view of the object.
 
-ViewTracker.get_recently_viewed(limit=10)
+``ViewTracker.get_recently_viewed(limit=10)``
 -----------------------------------------
 This yields the 10 most recently viewed objects.
 
-ViewTracker.get_for_model(<mymodel>), ViewTracker.get_for_models(*<mymodels>)
+``ViewTracker.get_for_model(<mymodel>)``, ``ViewTracker.get_for_models(*<mymodels>)``
 -----------------------------------------------------------------------------
 This filters out the views for <mymodel> respectively the list *<mymodels>.
 
