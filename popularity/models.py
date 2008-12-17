@@ -12,49 +12,57 @@ from django.conf import settings
 # After this amount (in seconds) the novelty is exactly 0.5
 CHARAGE = float(getattr(settings, 'CHARAGE', 3600))
 
-_SQL_AGE = '(NOW() - first_view)'
-_SQL_MAXVIEWS = '(SELECT MAX(views) FROM %(table)s)'#  % {'table' : db_table }
-_SQL_RELVIEWS = '(views/%(maxviews)s)'#  % {'maxviews' : self._SQL_MAXVIEWS }
-_SQL_NOVELTY = 'EXP(%(logscaling)s * %(age)s/%(charage)s)'#  % {'logscaling' : logscaling, 'age': self._SQL_AGE, 'charage':CHARAGE }
-_SQL_POPULARITY = '%(relviews)s * %(novelty)s'
-
 class ViewTrackerQuerySet(models.query.QuerySet):
     def __init__ (self, model = None, *args, **kwargs):
         super(ViewTrackerQuerySet, self).__init__ (model, *args, **kwargs)
         
         from math import log
         logscaling = log(0.5)
-        
-        db_table = self.model._meta.db_table
-        
-        self._SQL_AGE = _SQL_AGE
-        self._SQL_MAXVIEWS = _SQL_MAXVIEWS % {'table' : db_table }
-        self._SQL_RELVIEWS = _SQL_RELVIEWS % {'maxviews' : self._SQL_MAXVIEWS }
-        self._SQL_NOVELTY = _SQL_NOVELTY % {'logscaling' : logscaling, 'age': self._SQL_AGE, 'charage':CHARAGE }
-        self._SQL_POPULARITY = _SQL_POPULARITY % {'relviews' : self._SQL_RELVIEWS, 'novelty':self._SQL_NOVELTY }
+
+        self._SQL_AGE ='(NOW() - first_view)'    
+        self._SQL_NOVELTY = 'EXP(%(logscaling)s * %(age)s/%(charage)s)' % {'logscaling' : logscaling, 
+                                                                           'age'        : self._SQL_AGE, 
+                                                                           'charage'    : CHARAGE }
+        self._SQL_RELVIEWS = '(views/%d)'
+        self._SQL_POPULARITY = '(relviews * novelty)'
         
     def select_age(self):
         """ Adds age with regards to NOW to the QuerySet
             fields. """
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'  
                         
-        return self.extra(select={'age': self._SQL_AGE})
+        return self.extra(select={'age' : self._SQL_AGE})
         
-    def select_relviews(self):
+    def select_relviews(self, relative_to=None):
         """ Adds a normalized view count to the QuerySet. """
-        return self.extra(select={'relviews': self._SQL_RELVIEWS })
+        
+        if not relative_to:
+            relative_to = self
+            
+        maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
+        
+        return self.extra(select={'relviews' : self._SQL_RELVIEWS % maxviews })
 
     def select_novelty(self):
         """ Compute novelty. """
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
         
-        return self.extra(select={'novelty': self._SQL_NOVELTY})
+        return self.extra(select={'age'     : self._SQL_AGE,
+                                  'novelty' : self._SQL_NOVELTY})
     
-    def select_popularity(self):
+    def select_popularity(self, relative_to=None):
         """ Compute popularity. """
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
         
-        return self.extra(select={'popularity' : self._SQL_POPULARITY})
+        if not relative_to:
+            relative_to = self
+            
+        maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
+        
+        return self.extra(select={'relviews'   : self._SQL_RELVIEWS % maxviews, 
+                                  'age'        : self._SQL_AGE, 
+                                  'novelty'    : self._SQL_NOVELTY,
+                                  'popularity' : self._SQL_POPULARITY })
         
     def get_recently_viewed(self, limit=10):
         """ Returns the most recently viewed objects. """

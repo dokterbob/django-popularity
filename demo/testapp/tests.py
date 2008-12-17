@@ -92,8 +92,8 @@ class PopularityTestCase(unittest.TestCase):
                 db_age = (datetime.now()-first_view).seconds
                 
                 #try:
-                self.assert_(abs(age - db_age) < 1)
-                self.assert_(abs(age - calc_age) < 1)
+                self.assert_(abs(age - db_age) <= 1, "age=%d, db_age=%d" % (age, db_age))
+                self.assert_(abs(age - calc_age) <= 1, "age=%d, calc_age=%d" % (age, calc_age))
                 self.assertEqual(db_age, calc_age)
                 #except:
                 #    import ipdb
