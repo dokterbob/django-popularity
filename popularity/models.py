@@ -7,48 +7,59 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
 from django.conf import settings
-# Characteristic age
-CHARAGE = float(getattr(settings, 'CHARAGE', 3600))
-HALFLOGSCALING = 0.693147 # ln(0.5)
 
-# This scaling is broken, still
-#MINNOVELTY = float(getattr(settings, 'MINNOVELTY', 0.0))
-#NOVELTYSCALING = 1.0/(1.0-MINNOVELTY)
+CHARAGE = float(getattr(settings, 'CHARAGE', 3600))
 
 class ViewTrackerManager(models.Manager):
     """ Manager methods to do stuff like:
         ViewTracker.objects.get_views_for_model(MyModel) 
     """
+    
+    def contribute_to_class(self, model, name):
+        super(ViewTrackerManager, self).contribute_to_class(model, name)
+        
+        from math import log
+        logscaling = log(0.5)
+
+        # Characteristic age, default one hour
+        # After this amount (in seconds) the novelty is exactly 0.5
+        
+        db_table = self.model._meta.db_table
+        
+        self._SQL_AGE = '(NOW() - first_view)'
+        self._SQL_MAXVIEWS = '(SELECT MAX(views) FROM %(table)s)' % {'table' : db_table }
+        self._SQL_RELVIEWS = '(views/%(maxviews)s)' % {'maxviews' : self._SQL_MAXVIEWS }
+        self._SQL_NOVELTY = 'EXP(%(logscaling)s * %(age)s/%(charage)s)' % {'logscaling' : logscaling, 'age': self._SQL_AGE, 'charage':CHARAGE }
+        self._SQL_POPULARITY = '%(relviews)s * %(novelty)s'
         
     def select_age(self):
         """ Adds age with regards to NOW to the QuerySet
             fields. """
-        
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'  
                         
-        return self.extra(select={'age': 'NOW() - first_view'})
-    
+        return self.extra(select={'age': self._SQL_AGE})
+        
     def select_relviews(self):
         """ Adds a normalized view count to the QuerySet. """
-        return self.extra(select={'relviews': 'views/(SELECT MAX(views) FROM popularity_viewtracker)'})
+        return self.extra(select={'relviews': self._SQL_RELVIEWS })
 
     def select_novelty(self):
         """ Compute novelty. """
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
         
+        return self.extra(select={'novelty': self._SQL_NOVELTY})
+        
         #return self.extra(select={'novelty' : '(1.0/%(NOVELTYSCALING)f)*EXP(%(HALFLOGSCALING)f*((NOW() - first_view)/3600))+%(MINNOVELTY)f' % myvars})
         
         #return self.extra(select={'novelty' : '(%f*EXP(%f*(NOW() - first_view)/%f)+%f)' % (NOVELTYSCALING, HALFLOGSCALING, CHARAGE, MINNOVELTY)})
-        return self.extra(select={'novelty' : 'EXP(%d*(NOW() - first_view)/%d)' % (HALFLOGSCALING, CHARAGE)})
+        #return self.extra(select={'novelty' : 'EXP(%d*(NOW() - first_view)/%d)' % (HALFLOGSCALING, CHARAGE)})
 
     
     def select_popularity(self):
         """ Compute popularity. """
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
         
-        params = {'popularity' : 'views/(SELECT MAX(views) FROM popularity_viewtracker)*EXP(-(NOW() - first_view)/%d)' % CHARAGE}
-        
-        return self.extra(select=params)
+        return self.extra(select={'popularity' : self._SQL_POPULARITY})
         
     def get_recently_viewed(self, limit=10):
         """ Returns the most recently viewed objects. """

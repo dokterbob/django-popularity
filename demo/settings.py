@@ -91,6 +91,8 @@ if DEBUG:
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='[%d/%b/%Y %H:%M:%S]')
 
+CHARAGE = 5
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
