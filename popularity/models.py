@@ -14,7 +14,7 @@ CHARAGE = float(getattr(settings, 'CHARAGE', 3600))
 
 class ViewTrackerQuerySet(models.query.QuerySet):
     def __init__ (self, model = None, *args, **kwargs):
-        super(ViewTrackerQuerySet, self).__init__ (model, *args, **kwargs)
+        super(self.__class__, self).__init__ (model, *args, **kwargs)
         
         from math import log
         logscaling = log(0.5)
@@ -41,10 +41,14 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         return self._add_extra('age', self._SQL_AGE)
         
     def select_relviews(self, relative_to=None):
-        """ Adds a normalized view count to the QuerySet. """
+        """ Adds 'relview', a normalized viewcount, to the QuerySet.
+            The normalization occcurs relative to the maximum number of views
+            in the current QuerySet, unless specified in 'relative_to'. """
         
         if not relative_to:
             relative_to = self
+        
+        assert relative_to.__class__ == self.__class__, 'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
             
         maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
         
