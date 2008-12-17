@@ -25,9 +25,9 @@ Installation
     
 2)  Copy the popularity and testapp directories to your application tree::
 
-    cd django-popularity
-    cp -r popularity $APPDIR/
-    cp -r demo/testapp $APPDIR/
+	cd django-popularity
+	cp -r popularity $APPDIR/
+	cp -r demo/testapp $APPDIR/
     
     (Here $APPDIR is wherever you throw the applications belonging to your    
     project).
@@ -39,19 +39,19 @@ Installation
     
 4)  Create required data structure::
 
-    cd $APPDIR
-    ./manage.py syncdb
+	cd $APPDIR
+	./manage.py syncdb
     
 5)  Run the unittests to see if it all makes sense::
 
-    ./manage.py test
-    (If this fucks up, please contact me!)
+	./manage.py test
+	(If this fucks up, please contact me!)
     
 6)  Make sure that for every method where you view an object you add the 
     following code (replace <viewed_object> by whatever you are viewing)::
     
-    from popularity.models import ViewTracker
-    ViewTracker.add_view_for(<viewed_object>)
+	from popularity.models import ViewTracker
+	ViewTracker.add_view_for(<viewed_object>)
     
 7)  You're done! Views should be tracked from now! Go whiiiiiiiiiiiiiiii!
 
