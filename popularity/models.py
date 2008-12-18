@@ -17,14 +17,14 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         super(self.__class__, self).__init__ (model, *args, **kwargs)
         
         from math import log
-        logscaling = log(0.5)
+        self._LOGSCALING = log(0.5)
 
         self._SQL_AGE ='(NOW() - first_view)'
-        self._SQL_NOVELTY = 'EXP(%(logscaling)s * %(age)s/%(charage)s)' % {'logscaling' : logscaling, 
-                                                                           'age'        : self._SQL_AGE, 
-                                                                           'charage'    : CHARAGE }
-        self._SQL_RELVIEWS = '(views/%d)'
-        self._SQL_POPULARITY = '(relviews * novelty)'
+        self._SQL_RELVIEWS = '(views/%(maxviews)d)'
+        self._SQL_RELAGE = '(%(age)s/%(maxage)d)'
+        self._SQL_NOVELTY = '(%(factor)s * EXP(%(logscaling)s * %(age)s/%(charage)s) + %(offset)s)'
+        self._SQL_POPULARITY = '(views/%(age)s)'
+        self._SQL_RELPOPULARITY = '(%(popularity)s/%(maxpopularity)s)'
     
     def _add_extra(self, field, sql):
         assert self.query.can_filter(), \
@@ -43,37 +43,103 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     def select_relviews(self, relative_to=None):
         """ Adds 'relview', a normalized viewcount, to the QuerySet.
             The normalization occcurs relative to the maximum number of views
-            in the current QuerySet, unless specified in 'relative_to'. """
+            in the current QuerySet, unless specified in 'relative_to'.
+            
+            The relative number of views should always in the range [0, 1]. """
+        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
         
         if not relative_to:
             relative_to = self
         
-        assert relative_to.__class__ == self.__class__, 'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
+        assert relative_to.__class__ == self.__class__, \
+                'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
             
         maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
         
-        return self._add_extra('relviews', self._SQL_RELVIEWS % maxviews)
+        SQL_RELVIEWS = self._SQL_RELVIEWS % {'maxviews' : maxviews}
+        
+        return self._add_extra('relviews', SQL_RELVIEWS)
 
-    def select_novelty(self):
-        """ Compute novelty. """
+    def select_relage(self, relative_to=None):
+        """ Adds 'relage', a normalized age, relative to the QuerySet.
+            The normalization occcurs relative to the maximum age
+            in the current QuerySet, unless specified in 'relative_to'.
+
+            The relative age should always in the range [0, 1]. """
+        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+
+        if not relative_to:
+            relative_to = self
+
+        assert relative_to.__class__ == self.__class__, \
+                'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
+
+        maxage = relative_to.extra(select={'maxage':'MAX(%s)' % self._SQL_AGE}).values('maxage')[0]['maxage']
+
+        SQL_RELAGE = self._SQL_RELAGE % {'age'    : self._SQL_AGE,
+                                         'maxage' : maxage}
+
+        return self._add_extra('relage', SQL_RELAGE)
+
+
+    def select_novelty(self, minimum=0.0):
+        """ Compute novelty - this is the age muliplied by a characteristic time.
+            After a this characteristic age, the novelty will be half its original
+            value (if the minimum is 0). The minimum is needed when this value 
+            is used in multiplication.
+            
+            The novelty value is always in the range [0, 1]. """
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
         
-        return self.select_age()._add_extra('novelty', self._SQL_NOVELTY)
+        offset = minimum
+        factor = 1/(1-offset)
+        
+        SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
+                                            'age'        : self._SQL_AGE,
+                                            'charage'    : CHARAGE,
+                                            'offset'     : offset, 
+                                            'factor'     : factor }
+        
+
+        return self.select_age()._add_extra('novelty', SQL_NOVELTY)
     
-    def select_popularity(self, relative_to=None):
-        """ Compute popularity. """
+    def select_popularity(self):
+        """ Compute popularity, which is defined as: views/age. """
+        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+                
+        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : self._SQL_AGE }
+
+        return self.select_age()._add_extra('popularity', SQL_POPULARITY)
+    
+    def select_relpopularity(self, relative_to=None):
+        """ Compute relative popularity, which is defined as: (views/age)/MAX(views/age).
+            
+            The relpopularity value should always be in the range [0, 1]. """
+
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
         
         if not relative_to:
             relative_to = self
-            
-        maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
 
-        return self.select_novelty().select_relviews()._add_extra('popularity', self._SQL_POPULARITY)
+        assert relative_to.__class__ == self.__class__, \
+                'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
+
+        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : self._SQL_AGE }
+
+        maxpopularity = relative_to.extra(select={'maxpopularity':'MAX(%s)' % SQL_POPULARITY}).values('maxpopularity')[0]['maxpopularity']
         
+        SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
+                                                       'maxpopularity' : maxpopularity }
+
+        return self.select_popularity()._add_extra('relpopularity', SQL_POPULARITY)
+            
     def get_recently_viewed(self, limit=10):
         """ Returns the most recently viewed objects. """
         return self.order_by('-last_view').limit(limit)
+    
+    def get_recently_added(self, limit=10):
+        """ Returns the objects with the most rcecent first_view. """
+        return self.order_by('-first_view').limit(limit)
     
     def get_for_model(self, model):
         """ Returns the objects and its views for a certain model. """
@@ -115,7 +181,9 @@ class ViewTrackerQuerySet(models.query.QuerySet):
 
 class ViewTrackerManager(models.Manager):
     """ Manager methods to do stuff like:
-        ViewTracker.objects.get_views_for_model(MyModel) 
+        ViewTracker.objects.get_views_for_model(MyModel).
+        
+        For documentation, please refer the ViewTrackerQuerySet object.
     """
     
     def get_query_set(self):
@@ -123,7 +191,10 @@ class ViewTrackerManager(models.Manager):
         
     def select_age(self, *args, **kwargs):
         return self.get_query_set().select_age(*args, **kwargs)
-        
+
+    def select_relage(self, *args, **kwargs):
+        return self.get_query_set().select_relage(*args, **kwargs)
+                    
     def select_relviews(self, *args, **kwargs):
         return self.get_query_set().select_relviews(*args, **kwargs)
 
@@ -132,6 +203,12 @@ class ViewTrackerManager(models.Manager):
     
     def select_popularity(self, *args, **kwargs):
         return self.get_query_set().select_popularity(*args, **kwargs)
+
+    def select_relpopularity(self, *args, **kwargs):
+        return self.get_query_set().select_relpopularity(*args, **kwargs)
+
+    def get_recently_added(self, *args, **kwargs):
+        return self.get_query_set().get_recently_added(*args, **kwargs)
     
     def get_recently_viewed(self, *args, **kwargs):
         return self.get_query_set().get_recently_viewed(*args, **kwargs)
