@@ -8,16 +8,17 @@ from django.contrib.contenttypes import generic
 
 from django.conf import settings
 
+from math import log
+
 # Characteristic age, default one hour
 # After this amount (in seconds) the novelty is exactly 0.5
 CHARAGE = float(getattr(settings, 'CHARAGE', 3600))
 
 class ViewTrackerQuerySet(models.query.QuerySet):
+    _LOGSCALING = log(0.5)
+    
     def __init__ (self, model = None, *args, **kwargs):
         super(self.__class__, self).__init__ (model, *args, **kwargs)
-        
-        from math import log
-        self._LOGSCALING = log(0.5)
 
         self._SQL_AGE ='(NOW() - first_view)'
         self._SQL_RELVIEWS = '(views/%(maxviews)d)'
@@ -167,7 +168,8 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         
         assert relative_to.__class__ == self.__class__, \
                 'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
-            
+        
+        assert abs(relview+relage+novelty+relpopularity+random) > 0, 'You should at least give me something to order by!'
         maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
         
         SQL_RELVIEWS = self._SQL_RELVIEWS % {'maxviews' : maxviews}
@@ -286,6 +288,12 @@ class ViewTrackerManager(models.Manager):
 
     def select_relpopularity(self, *args, **kwargs):
         return self.get_query_set().select_relpopularity(*args, **kwargs)
+
+    def select_random(self, *args, **kwargs):
+        return self.get_query_set().select_random(*args, **kwargs)
+
+    def select_ordering(self, *args, **kwargs):
+        return self.get_query_set().select_ordering(*args, **kwargs)
 
     def get_recently_added(self, *args, **kwargs):
         return self.get_query_set().get_recently_added(*args, **kwargs)
