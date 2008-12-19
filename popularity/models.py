@@ -25,6 +25,14 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         self._SQL_NOVELTY = '(%(factor)s * EXP(%(logscaling)s * %(age)s/%(charage)s) + %(offset)s)'
         self._SQL_POPULARITY = '(views/%(age)s)'
         self._SQL_RELPOPULARITY = '(%(popularity)s/%(maxpopularity)s)'
+        self._SQL_RANDOM = 'RAND()'
+        
+        self._SQL_ORDERING = '%(relview)f * %(relview_sql)s + \
+                              %(relage)f  * %(relage_sql)s + \
+                              %(novelty)f * %(novelty_sql)s + \
+                              %(relpopularity)f * %(relpopularity_sql)s + \
+                              %(random)f * %(random_sql)s + \
+                              %(offset)f'
     
     def _add_extra(self, field, sql):
         assert self.query.can_filter(), \
@@ -99,7 +107,6 @@ class ViewTrackerQuerySet(models.query.QuerySet):
                                             'charage'    : CHARAGE,
                                             'offset'     : offset, 
                                             'factor'     : factor }
-        
 
         return self.select_age()._add_extra('novelty', SQL_NOVELTY)
     
@@ -132,7 +139,80 @@ class ViewTrackerQuerySet(models.query.QuerySet):
                                                        'maxpopularity' : maxpopularity }
 
         return self.select_popularity()._add_extra('relpopularity', SQL_POPULARITY)
+    
+    def select_random(self):
+        """ Returns the original QuerySet with an extra field 'random' containing a random
+            value in the range [0,1] to use for ordering.
+        """
+        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        
+        SQL_RANDOM = self.RANDOM
+        
+        return self._add_extra('random', SQL_RANDOM)
+    
+    def select_ordering(relview=0.0, relage=0.0, novelty=0.0, relpopularity=0.0, random=0.0, offset=0.0, relative_to=None):
+        """ Creates an 'ordering' field used for sorting the current QuerySet according to
+            specified criteria, given by the parameters. 
             
+            All the parameters given here are relative to one another, so if you specify 
+            random=1.0 and relage=3.0 then the relative age is 3 times as important. 
+            
+            Please do note that the relative age is the only value here that INCREASES over time so
+            you might want to specify a NEGATIVE value here and use an offset, just to compensate. 
+        """
+        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        
+        if not relative_to:
+            relative_to = self
+        
+        assert relative_to.__class__ == self.__class__, \
+                'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
+            
+        maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
+        
+        SQL_RELVIEWS = self._SQL_RELVIEWS % {'maxviews' : maxviews}
+        
+        maxage = relative_to.extra(select={'maxage':'MAX(%s)' % self._SQL_AGE}).values('maxage')[0]['maxage']
+
+        SQL_RELAGE = self._SQL_RELAGE % {'age'    : self._SQL_AGE,
+                                         'maxage' : maxage}
+        
+        # Here, because the ordering field is not normalize, we don't have to bother about a minimum for the novelty
+        SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
+                                            'age'        : self._SQL_AGE,
+                                            'charage'    : CHARAGE,
+                                            'offset'     : 0.0, 
+                                            'factor'     : 1.0 }
+                                            
+        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : self._SQL_AGE }
+
+        maxpopularity = relative_to.extra(select={'maxpopularity':'MAX(%s)' % SQL_POPULARITY}).values('maxpopularity')[0]['maxpopularity']
+
+        SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
+                                                       'maxpopularity' : maxpopularity }
+        
+        SQL_RANDOM = self.RANDOM
+        
+        self._SQL_ORDERING = '%(relview)f * %(relview_sql)s + \
+                              %(relage)f  * %(relage_sql)s + \
+                              %(novelty)f * %(novelty_sql)s + \
+                              %(relpopularity)f * %(relpopularity_sql)s + \
+                              %(random)f * %(random_sql)s + \
+                              %(offset)f'
+                              
+        SQL_ORDERING = self._SQL_ORDERING % {'relview'           : relview,
+                                             'relage'            : relage,
+                                             'novelty'           : novelty,
+                                             'relpopularity'     : relpopularity,
+                                             'random'            : random,
+                                             'relview_sql'       : SQL_RELVIEWS,
+                                             'relage_sql'        : SQL_RELAGE,
+                                             'novelty_sql'       : SQL_NOVELTY,
+                                             'relpopularity_sql' : SQL_RELPOPULARITY,
+                                             'random_sql'        : SQL_RANDOM }
+        
+        return self._add_extra('ordering', SQL_ORDERING)
+        
     def get_recently_viewed(self, limit=10):
         """ Returns the most recently viewed objects. """
         return self.order_by('-last_view').limit(limit)
