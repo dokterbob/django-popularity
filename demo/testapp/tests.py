@@ -119,14 +119,36 @@ class PopularityTestCase(unittest.TestCase):
     def testNovelty(self):
         from django.conf import settings
         if settings.DATABASE_ENGINE == 'mysql':
+            new = TestObject(title='Obj q')
+            new.save()
             
+            viewtracker = ViewTracker.add_view_for(new)
+            first_view = viewtracker.first_view
+            
+            novelty = ViewTracker.objects.select_novelty(charage=MAX_SECONDS).filter(pk=viewtracker.pk)[0].novelty
+            self.assertAlmostEquals(float(novelty), 1.0, 1, 'novelty=%f != 1.0' % novelty)
+            
+            sleep(MAX_SECONDS)
+            
+            novelty = ViewTracker.objects.select_novelty(charage=MAX_SECONDS).filter(pk=viewtracker.pk)[0].novelty
+            self.assertAlmostEquals(float(novelty), 0.5, 1, 'novelty=%f != 0.5' % novelty)
+    
+    def testRelage(self):
+        from django.conf import settings
+        if settings.DATABASE_ENGINE == 'mysql':
             new = TestObject(title='Obj q')
             new.save()
     
             viewtracker = ViewTracker.add_view_for(new)
-            first_view = viewtracker.first_view
-    
-            sleep(CHARAGE)
             
-            novelty = ViewTracker.objects.select_novelty().filter(pk=viewtracker.pk)[0].novelty
-            self.assertAlmostEquals(float(novelty), 0.5, 1, 'novelty=%f != 0.5' % novelty)
+            relage = ViewTracker.objects.select_relage()
+            youngest = relage.order_by('relage')[0]
+            
+            self.assertEqual(viewtracker, youngest)
+            self.assertAlmostEquals(float(youngest.relage), 0.0, 2)
+            
+            oldest_age = ViewTracker.objects.select_age().order_by('-age')[0]
+            oldest_relage = relage.order_by('-relage')[0]
+            
+            self.assertEqual(oldest_relage, oldest_age)
+            self.assertAlmostEquals(float(oldest_relage.relage), 1.0, 2)

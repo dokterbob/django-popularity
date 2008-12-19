@@ -10,10 +10,6 @@ from django.conf import settings
 
 from math import log
 
-# Characteristic age, default one hour
-# After this amount (in seconds) the novelty is exactly 0.5
-CHARAGE = float(getattr(settings, 'CHARAGE', 3600))
-
 class ViewTrackerQuerySet(models.query.QuerySet):
     _LOGSCALING = log(0.5)
     
@@ -92,7 +88,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         return self._add_extra('relage', SQL_RELAGE)
 
 
-    def select_novelty(self, minimum=0.0):
+    def select_novelty(self, minimum=0.0, charage=None):
         """ Compute novelty - this is the age muliplied by a characteristic time.
             After a this characteristic age, the novelty will be half its original
             value (if the minimum is 0). The minimum is needed when this value 
@@ -104,9 +100,14 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         offset = minimum
         factor = 1/(1-offset)
         
+        # Characteristic age, default one hour
+        # After this amount (in seconds) the novelty is exactly 0.5
+        if not charage:
+            charage = float(getattr(settings, 'CHARAGE', 3600))
+        
         SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
                                             'age'        : self._SQL_AGE,
-                                            'charage'    : CHARAGE,
+                                            'charage'    : charage,
                                             'offset'     : offset, 
                                             'factor'     : factor }
 
@@ -152,7 +153,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         
         return self._add_extra('random', SQL_RANDOM)
     
-    def select_relevance(relative_to=None, minimum_novelty=0.1):
+    def select_relevance(relative_to=None, minimum_novelty=0.1, charage_novelty=None):
         """ This adds the multiplication of novelty and relpopularity to the QuerySet, as 'relevance'. """
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
         
@@ -168,13 +169,18 @@ class ViewTrackerQuerySet(models.query.QuerySet):
 
         SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
                                                        'maxpopularity' : maxpopularity }
-        
+
+        # Characteristic age, default one hour
+        # After this amount (in seconds) the novelty is exactly 0.5
+        if not charage_novelty:
+           charage_novelty = float(getattr(settings, 'CHARAGE', 3600))
+
         offset = minimum_novelty
         factor = 1/(1-offset)
         
         SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
                                             'age'        : self._SQL_AGE,
-                                            'charage'    : CHARAGE,
+                                            'charage'    : charage_novelty,
                                             'offset'     : offset, 
                                             'factor'     : factor }
         
@@ -183,7 +189,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
 
         return self._add_extra('relevance', SQL_RELEVANCE)
 
-    def select_ordering(relview=0.0, relage=0.0, novelty=0.0, relpopularity=0.0, random=0.0, relevance=0.0, offset=0.0, relative_to=None):
+    def select_ordering(relview=0.0, relage=0.0, novelty=0.0, relpopularity=0.0, random=0.0, relevance=0.0, offset=0.0, charage_novelty=None, relative_to=None):
         """ Creates an 'ordering' field used for sorting the current QuerySet according to
             specified criteria, given by the parameters. 
             
@@ -211,11 +217,16 @@ class ViewTrackerQuerySet(models.query.QuerySet):
 
         SQL_RELAGE = self._SQL_RELAGE % {'age'    : self._SQL_AGE,
                                          'maxage' : maxage}
-        
+
+        # Characteristic age, default one hour
+        # After this amount (in seconds) the novelty is exactly 0.5
+        if not charage_novelty:
+            charage_novelty = float(getattr(settings, 'CHARAGE', 3600)) 
+            
         # Here, because the ordering field is not normalize, we don't have to bother about a minimum for the novelty
         SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
                                             'age'        : self._SQL_AGE,
-                                            'charage'    : CHARAGE,
+                                            'charage'    : charage_novelty,
                                             'offset'     : 0.0, 
                                             'factor'     : 1.0 }
                                             
