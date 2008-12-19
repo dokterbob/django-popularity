@@ -207,7 +207,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         assert relative_to.__class__ == self.__class__, \
                 'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
         
-        assert abs(relview+relage+novelty+relpopularity+random) > 0, 'You should at least give me something to order by!'
+        assert abs(relview+relage+novelty+relpopularity+random+relevance) > 0, 'You should at least give me something to order by!'
         
         maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
         
