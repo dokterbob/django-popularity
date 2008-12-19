@@ -27,12 +27,13 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         self._SQL_POPULARITY = '(views/%(age)s)'
         self._SQL_RELPOPULARITY = '(%(popularity)s/%(maxpopularity)s)'
         self._SQL_RANDOM = 'RAND()'
-        
+        self._SQL_RELEVANCE = '%(relpopularity)s * %(novelty)s'
         self._SQL_ORDERING = '%(relview)f * %(relview_sql)s + \
                               %(relage)f  * %(relage_sql)s + \
                               %(novelty)f * %(novelty_sql)s + \
                               %(relpopularity)f * %(relpopularity_sql)s + \
                               %(random)f * %(random_sql)s + \
+                              %(relevance)f * %(relevance_sql)s + \
                               %(offset)f'
     
     def _add_extra(self, field, sql):
@@ -109,7 +110,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
                                             'offset'     : offset, 
                                             'factor'     : factor }
 
-        return self.select_age()._add_extra('novelty', SQL_NOVELTY)
+        return self._add_extra('novelty', SQL_NOVELTY)
     
     def select_popularity(self):
         """ Compute popularity, which is defined as: views/age. """
@@ -117,7 +118,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
                 
         SQL_POPULARITY = self._SQL_POPULARITY % {'age' : self._SQL_AGE }
 
-        return self.select_age()._add_extra('popularity', SQL_POPULARITY)
+        return self._add_extra('popularity', SQL_POPULARITY)
     
     def select_relpopularity(self, relative_to=None):
         """ Compute relative popularity, which is defined as: (views/age)/MAX(views/age).
@@ -139,7 +140,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
                                                        'maxpopularity' : maxpopularity }
 
-        return self.select_popularity()._add_extra('relpopularity', SQL_POPULARITY)
+        return self._add_extra('relpopularity', SQL_POPULARITY)
     
     def select_random(self):
         """ Returns the original QuerySet with an extra field 'random' containing a random
@@ -151,7 +152,38 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         
         return self._add_extra('random', SQL_RANDOM)
     
-    def select_ordering(relview=0.0, relage=0.0, novelty=0.0, relpopularity=0.0, random=0.0, offset=0.0, relative_to=None):
+    def select_relevance(relative_to=None, minimum_novelty=0.1):
+        """ This adds the multiplication of novelty and relpopularity to the QuerySet, as 'relevance'. """
+        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        
+        if not relative_to:
+            relative_to = self
+        
+        assert relative_to.__class__ == self.__class__, \
+                'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
+    
+        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : self._SQL_AGE }
+
+        maxpopularity = relative_to.extra(select={'maxpopularity':'MAX(%s)' % SQL_POPULARITY}).values('maxpopularity')[0]['maxpopularity']
+
+        SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
+                                                       'maxpopularity' : maxpopularity }
+        
+        offset = minimum_novelty
+        factor = 1/(1-offset)
+        
+        SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
+                                            'age'        : self._SQL_AGE,
+                                            'charage'    : CHARAGE,
+                                            'offset'     : offset, 
+                                            'factor'     : factor }
+        
+        SQL_RELEVANCE = self._SQL_RELEVANCE % {'novelty'       : SQL_NOVELTY,
+                                               'relpopularity' : SQL_RELPOPULARITY }
+
+        return self._add_extra('relevance', SQL_RELEVANCE)
+
+    def select_ordering(relview=0.0, relage=0.0, novelty=0.0, relpopularity=0.0, random=0.0, relevance=0.0, offset=0.0, relative_to=None):
         """ Creates an 'ordering' field used for sorting the current QuerySet according to
             specified criteria, given by the parameters. 
             
@@ -170,6 +202,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
                 'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
         
         assert abs(relview+relage+novelty+relpopularity+random) > 0, 'You should at least give me something to order by!'
+        
         maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
         
         SQL_RELVIEWS = self._SQL_RELVIEWS % {'maxviews' : maxviews}
@@ -195,23 +228,21 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         
         SQL_RANDOM = self.RANDOM
         
-        self._SQL_ORDERING = '%(relview)f * %(relview_sql)s + \
-                              %(relage)f  * %(relage_sql)s + \
-                              %(novelty)f * %(novelty_sql)s + \
-                              %(relpopularity)f * %(relpopularity_sql)s + \
-                              %(random)f * %(random_sql)s + \
-                              %(offset)f'
-                              
+        SQL_RELEVANCE = self._SQL_RELEVANCE % {'novelty'       : SQL_NOVELTY,
+                                               'relpopularity' : SQL_RELPOPULARITY }
+                                      
         SQL_ORDERING = self._SQL_ORDERING % {'relview'           : relview,
                                              'relage'            : relage,
                                              'novelty'           : novelty,
                                              'relpopularity'     : relpopularity,
+                                             'relevance'         : relevance,
                                              'random'            : random,
                                              'relview_sql'       : SQL_RELVIEWS,
                                              'relage_sql'        : SQL_RELAGE,
                                              'novelty_sql'       : SQL_NOVELTY,
                                              'relpopularity_sql' : SQL_RELPOPULARITY,
-                                             'random_sql'        : SQL_RANDOM }
+                                             'random_sql'        : SQL_RANDOM,
+                                             'relevance_sql'     : SQL_RELEVANCE }
         
         return self._add_extra('ordering', SQL_ORDERING)
         
