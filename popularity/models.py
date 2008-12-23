@@ -265,6 +265,10 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         """ Returns the objects with the most rcecent first_view. """
         return self.order_by('-first_view').limit(limit)
     
+    def get_most_popular(self, limit=10):
+        """ Returns the most popular objects. """
+        return self.select_popularity().order_by('-popularity').limit(limit)
+    
     def get_for_model(self, model):
         """ Returns the objects and its views for a certain model. """
         return self.get_for_models([model])
@@ -342,6 +346,9 @@ class ViewTrackerManager(models.Manager):
     
     def get_recently_viewed(self, *args, **kwargs):
         return self.get_query_set().get_recently_viewed(*args, **kwargs)
+    
+    def get_most_popular(self, *args, **kwargs):
+            return self.get_query_set().get_most_popular(*args, **kwargs)
     
     def get_for_model(self, *args, **kwargs):
         return self.get_query_set().get_for_model(*args, **kwargs)
