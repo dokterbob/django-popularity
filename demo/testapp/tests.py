@@ -98,6 +98,9 @@ class PopularityTestCase(unittest.TestCase):
                 #except:
                 #    import ipdb
                 #    ipdb.set_trace()
+                
+            for o in ViewTracker.objects.select_age():
+                self.assert_(o.age >= 0, "Negative age %f for object <%s>." % (o.age, o))
                     
     
     def testRelviews(self):
