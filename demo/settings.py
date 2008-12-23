@@ -3,7 +3,7 @@
 from os import path
 PROJECT_ROOT = path.dirname(__file__)
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (

@@ -2,13 +2,13 @@ import logging
 
 from datetime import datetime
 
-from django.db import models
+from math import log
+
+from django.db import models, connection
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
 from django.conf import settings
-
-from math import log
 
 class ViewTrackerQuerySet(models.query.QuerySet):
     _LOGSCALING = log(0.5)
@@ -16,13 +16,14 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     def __init__ (self, model = None, *args, **kwargs):
         super(self.__class__, self).__init__ (model, *args, **kwargs)
 
-        self._SQL_AGE ='(NOW() - first_view)'
+        self._SQL_NOW = "CAST('%s' AS DATETIME)"
+        self._SQL_AGE ='(%(now)s - first_view)'
         self._SQL_RELVIEWS = '(views/%(maxviews)d)'
         self._SQL_RELAGE = '(%(age)s/%(maxage)d)'
         self._SQL_NOVELTY = '(%(factor)s * EXP(%(logscaling)s * %(age)s/%(charage)s) + %(offset)s)'
         self._SQL_POPULARITY = '(views/%(age)s)'
         self._SQL_RELPOPULARITY = '(%(popularity)s/%(maxpopularity)s)'
-        self._SQL_RANDOM = 'RAND()'
+        self._SQL_RANDOM = connection.ops.random_function_sql()
         self._SQL_RELEVANCE = '%(relpopularity)s * %(novelty)s'
         self._SQL_ORDERING = '%(relview)f * %(relview_sql)s + \
                               %(relage)f  * %(relage_sql)s + \
@@ -32,9 +33,23 @@ class ViewTrackerQuerySet(models.query.QuerySet):
                               %(relevance)f * %(relevance_sql)s + \
                               %(offset)f'
     
+    def _get_db_datetime(self, value=None):
+        """ Retrieve an SQL-interpretable representation of the datetime value, or
+            now if no value is specified. """
+        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        
+        if not value:
+            value = datetime.now()
+        
+        _SQL_NOW = self._SQL_NOW % connection.ops.value_to_db_datetime(value)
+        return  _SQL_NOW
+    
     def _add_extra(self, field, sql):
+        """ Add the extra parameter 'field' with value 'sql' to the queryset (without
+            removing previous parameters, as oppsoed to the normal .extra method). """
         assert self.query.can_filter(), \
                 "Cannot change a query once a slice has been taken"
+        logging.debug(sql)   
         clone = self._clone()
         clone.query.add_extra({field:sql}, None, None, None, None, None)
         return clone
@@ -43,8 +58,10 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         """ Adds age with regards to NOW to the QuerySet
             fields. """
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'  
+        
+        _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
                         
-        return self._add_extra('age', self._SQL_AGE)
+        return self._add_extra('age', _SQL_AGE)
         
     def select_relviews(self, relative_to=None):
         """ Adds 'relview', a normalized viewcount, to the QuerySet.
@@ -80,9 +97,11 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         assert relative_to.__class__ == self.__class__, \
                 'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
 
-        maxage = relative_to.extra(select={'maxage':'MAX(%s)' % self._SQL_AGE}).values('maxage')[0]['maxage']
+        _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
 
-        SQL_RELAGE = self._SQL_RELAGE % {'age'    : self._SQL_AGE,
+        maxage = relative_to.extra(select={'maxage':'MAX(%s)' % _SQL_AGE}).values('maxage')[0]['maxage']
+
+        SQL_RELAGE = self._SQL_RELAGE % {'age'    : _SQL_AGE,
                                          'maxage' : maxage}
 
         return self._add_extra('relage', SQL_RELAGE)
@@ -105,8 +124,10 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         if not charage:
             charage = float(getattr(settings, 'CHARAGE', 3600))
         
+        _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
+        
         SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
-                                            'age'        : self._SQL_AGE,
+                                            'age'        : _SQL_AGE,
                                             'charage'    : charage,
                                             'offset'     : offset, 
                                             'factor'     : factor }
@@ -116,8 +137,10 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     def select_popularity(self):
         """ Compute popularity, which is defined as: views/age. """
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
-                
-        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : self._SQL_AGE }
+        
+        _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
+        
+        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
 
         return self._add_extra('popularity', SQL_POPULARITY)
     
@@ -134,7 +157,9 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         assert relative_to.__class__ == self.__class__, \
                 'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
 
-        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : self._SQL_AGE }
+        _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
+
+        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
 
         maxpopularity = relative_to.extra(select={'maxpopularity':'MAX(%s)' % SQL_POPULARITY}).values('maxpopularity')[0]['maxpopularity']
         
@@ -163,7 +188,9 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         assert relative_to.__class__ == self.__class__, \
                 'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
     
-        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : self._SQL_AGE }
+        _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
+    
+        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
 
         maxpopularity = relative_to.extra(select={'maxpopularity':'MAX(%s)' % SQL_POPULARITY}).values('maxpopularity')[0]['maxpopularity']
 
@@ -178,8 +205,10 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         offset = minimum_novelty
         factor = 1/(1-offset)
         
+        _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
+        
         SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
-                                            'age'        : self._SQL_AGE,
+                                            'age'        : _SQL_AGE,
                                             'charage'    : charage_novelty,
                                             'offset'     : offset, 
                                             'factor'     : factor }
@@ -213,9 +242,11 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         
         SQL_RELVIEWS = self._SQL_RELVIEWS % {'maxviews' : maxviews}
         
-        maxage = relative_to.extra(select={'maxage':'MAX(%s)' % self._SQL_AGE}).values('maxage')[0]['maxage']
+        _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
+        
+        maxage = relative_to.extra(select={'maxage':'MAX(%s)' % _SQL_AGE}).values('maxage')[0]['maxage']
 
-        SQL_RELAGE = self._SQL_RELAGE % {'age'    : self._SQL_AGE,
+        SQL_RELAGE = self._SQL_RELAGE % {'age'    : _SQL_AGE,
                                          'maxage' : maxage}
 
         # Characteristic age, default one hour
@@ -225,12 +256,12 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             
         # Here, because the ordering field is not normalize, we don't have to bother about a minimum for the novelty
         SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
-                                            'age'        : self._SQL_AGE,
+                                            'age'        : _SQL_AGE,
                                             'charage'    : charage_novelty,
                                             'offset'     : 0.0, 
                                             'factor'     : 1.0 }
                                             
-        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : self._SQL_AGE }
+        SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
 
         maxpopularity = relative_to.extra(select={'maxpopularity':'MAX(%s)' % SQL_POPULARITY}).values('maxpopularity')[0]['maxpopularity']
 
@@ -393,7 +424,6 @@ class ViewTracker(models.Model):
         logging.debug('Incrementing views for %s from %d to %d' % (self.content_object, self.views, self.views+1))
         self.views = self.views + 1
         self.save()
-    
         
     @classmethod
     def add_view_for(cls, content_object):
