@@ -390,19 +390,10 @@ class ViewTracker(models.Model):
     def increment(self):
         """ This increments my view count.
             TODO: optimize in SQL. """
-        #logging.debug('Incrementing views for %s from %d to %d' % (self.content_object, self.views, self.views+1))
+        logging.debug('Incrementing views for %s from %d to %d' % (self.content_object, self.views, self.views+1))
         self.views = self.views + 1
         self.save()
     
-    def get_age(self, refdate=None):
-        """ Gets the age of an object relating to a reference date 
-            (defaults to now). """
-        if not refdate:
-            refdate = datetime.now()
-        
-        assert refdate >= self.first_view, 'Reference date should be equal to or higher than the first view.'
-        
-        return refdate - self.first_view
         
     @classmethod
     def add_view_for(cls, content_object):
