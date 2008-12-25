@@ -74,31 +74,51 @@ class PopularityTestCase(unittest.TestCase):
             for i in xrange(0,REPEAT_COUNT):
                 new = TestObject(title='Obj q')
                 new.save()
-        
+                
+                # This sets the first view for our test object
                 viewtracker = ViewTracker.add_view_for(new)
+                
+                # Note down the initial time
+                # Request the initial time from the database
+                old_time = datetime.now()
                 first_view = viewtracker.first_view
-        
-                sleep(random.randint(1,MAX_SECONDS))
-        
-                ViewTracker.add_view_for(new)
-        
+                
+                #import ipdb; ipdb.set_trace()
+                
+                # These should be the same with at most a 1 second difference
+                self.assert_(abs((old_time-first_view).seconds) <= 1, "old_time=%s, first_view=%s" % (old_time, first_view))
+                
+                # Wait a random number of seconds
+                wait = random.randint(1,MAX_SECONDS)
+                sleep(wait)
+                
+                # This sets the last view for the same object
                 viewtracker = ViewTracker.add_view_for(new)
+                
+                # Do the same checks
+                new_time = datetime.now()
                 last_view = viewtracker.last_view
                 
-                calc_age = (datetime.now() - first_view).seconds
-        
-                age = ViewTracker.objects.select_age().filter(pk=viewtracker.pk)[0].age
-        
-                db_age = (datetime.now()-first_view).seconds
+                # These should be the same with at most a 1 second difference
+                self.assert_(abs((new_time-last_view).seconds) <= 1, "new_time=%s, last_view=%s" % (new_time, last_view))
+                                
+                # Now see if we have calculated the age right, using previous queries
+                calc_age = (new_time - old_time).seconds
+                db_age = (last_view - first_view).seconds
+                self.assert_(abs(db_age - calc_age) <= 1, "db_age=%d, calc_age=%d" % (db_age, calc_age))
                 
-                #try:
+                # Check if we indeed waited the righ amount of time 'test the test'
+                self.assert_(abs(wait - calc_age) <= 1, "wait=%d, calc_age=%d" % (wait, calc_age))
+                
+                # Now rqeuest the age from the QuerySet
+                age = ViewTracker.objects.select_age().filter(pk=viewtracker.pk)[0].age
+                
+                # See whether it matches
                 self.assert_(abs(age - db_age) <= 1, "age=%d, db_age=%d" % (age, db_age))
                 self.assert_(abs(age - calc_age) <= 1, "age=%d, calc_age=%d" % (age, calc_age))
-                self.assertEqual(db_age, calc_age)
-                #except:
-                #    import ipdb
-                #    ipdb.set_trace()
                 
+            
+            # Just a retarded test to see if we have no negative ages for objects    
             for o in ViewTracker.objects.select_age():
                 self.assert_(o.age >= 0, "Negative age %f for object <%s>." % (o.age, o))
                     
