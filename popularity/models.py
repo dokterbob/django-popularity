@@ -17,7 +17,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         super(self.__class__, self).__init__ (model, *args, **kwargs)
 
         self._SQL_NOW = "CAST('%s' AS DATETIME)"
-        self._SQL_AGE ='(%(now)s - first_view)'
+        self._SQL_AGE ='(%(now)s - CAST(first_view AS DATETIME))'
         self._SQL_RELVIEWS = '(views/%(maxviews)d)'
         self._SQL_RELAGE = '(%(age)s/%(maxage)d)'
         self._SQL_NOVELTY = '(%(factor)s * EXP(%(logscaling)s * %(age)s/%(charage)s) + %(offset)s)'
@@ -60,7 +60,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'  
         
         _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
-                        
+        
         return self._add_extra('age', _SQL_AGE)
         
     def select_relviews(self, relative_to=None):

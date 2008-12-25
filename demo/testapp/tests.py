@@ -115,8 +115,7 @@ class PopularityTestCase(unittest.TestCase):
                 
                 # See whether it matches
                 self.assert_(abs(age - db_age) <= 1, "age=%d, db_age=%d" % (age, db_age))
-                self.assert_(abs(age - calc_age) <= 1, "age=%d, calc_age=%d" % (age, calc_age))
-                
+                self.assert_(abs(age - calc_age) <= 1, "age=%d, calc_age=%d" % (age, calc_age))    
             
             # Just a retarded test to see if we have no negative ages for objects    
             for o in ViewTracker.objects.select_age():
