@@ -16,8 +16,8 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     def __init__ (self, model = None, *args, **kwargs):
         super(self.__class__, self).__init__ (model, *args, **kwargs)
 
-        self._SQL_NOW = "CAST('%s' AS DATETIME)"
-        self._SQL_AGE ='(%(now)s - CAST(first_view AS DATETIME))'
+        self._SQL_NOW = "'%s'"
+        self._SQL_AGE = 'TIMESTAMPDIFF(SECOND, first_view, %(now)s)'
         self._SQL_RELVIEWS = '(views/%(maxviews)d)'
         self._SQL_RELAGE = '(%(age)s/%(maxage)d)'
         self._SQL_NOVELTY = '(%(factor)s * EXP(%(logscaling)s * %(age)s/%(charage)s) + %(offset)s)'
