@@ -304,28 +304,28 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         if not limit:
             limit = POPULARITY_LISTSIZE
             
-        return self.order_by('-last_view')[:limit]
+        return self.order_by('-last_view').select_related()[:limit]
     
     def get_recently_added(self, limit=None):
         """ Returns the objects with the most rcecent first_view. """
         if not limit:
             limit = POPULARITY_LISTSIZE
             
-        return self.order_by('-first_view')[:limit]
+        return self.order_by('-first_view').select_related()[:limit]
     
     def get_most_popular(self, limit=None):
         """ Returns the most popular objects. """
         if not limit:
             limit = POPULARITY_LISTSIZE
             
-        return self.select_popularity().order_by('-popularity')[:limit]
+        return self.select_popularity().order_by('-popularity').select_related()[:limit]
     
     def get_most_viewed(self, limit=None):
         """ Returns the most viewed objects. """
         if not limit:
             limit = POPULARITY_LISTSIZE
             
-        return self.order_by('-views')[:limit]
+        return self.order_by('-views').select_related()[:limit]
         
     def get_for_model(self, model):
         """ Returns the objects and its views for a certain model. """
