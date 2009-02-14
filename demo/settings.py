@@ -15,6 +15,7 @@ MANAGERS = ADMINS
 
 DATABASE_ENGINE = 'mysql'
 DATABASE_NAME = 'django_popularity'
+TEST_DATABASE_NAME = DATABASE_NAME
 DATABASE_USER = 'root'             # Not used with sqlite3.
 DATABASE_PASSWORD = ''         # Not used with sqlite3.
 DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
