@@ -20,6 +20,7 @@ Also, please note that as of now we have about zero documentation.
 Requirements
 ============
 Short answer: MySQL >= 4.1.1, Django >= 
+
 Long answer:
 Currently, this has only beentested for MySQL, thought it might work for Postgres and others as well (though SQLite might make some trouble out of it). If you do manage to get it to work (with or without modifications), please let me know so other users can profit from it as well.
 
@@ -28,17 +29,17 @@ is as of now not yet mature enough.
 
 Installation
 ============
-*)  Change into some sensible directory and get the latest version from 
+1)  Change into some sensible directory and get the latest version from 
     GitHub by doing::
     
 	git clone git://github.com/dokterbob/django-popularity.git
     
     (In case you don't have or like Git, get the latest tarball from
-    http://github.com/dokterbob/django-popularity/tarball/master)
+    http://github.com/dokterbob/django-popularity/tarball/master.)
     
-*)  Configure a test database in `demo/settings.py` and run the unit tests
+2)  Configure a test database in `demo/settings.py` and run the unit tests
     to see if you are to expect any trouble. If you're a fool, safely ignore 
-    this step.
+    this step::
     
 	cd demo
 	./manage.py test
@@ -46,18 +47,18 @@ Installation
     If this fails, please contact me!
     If it doesn't: that's a good sign, chap! Go on to the next step.
     
-*)  Link the popularity directory to your application tree::
+3)  Link the popularity directory to your application tree::
     
 	ln -s django-popularity/popularity $PROJECT_DIR/popularity
     
     (Here `$PROJECT_DIR` is your project root directory.)
     
-*)  Add popularity to `INSTALLED_APPS` in settings.py.
+4)  Add popularity to `INSTALLED_APPS` in settings.py.
 
 	INSTALLED_APPS = (
-		...
-		'popularity',
-		...
+	    ...
+	    'popularity',
+	    ...
 	)
     
     Optionally, use the variable `POPULARITY_CHARAGE` to the characteristic 
@@ -66,12 +67,12 @@ Installation
     There is also a configuration variable `POPULARITY_LISTSIZE` to set the
     default number of 'popular' items returned.
     
-*)  Create required data structure::
+5)  Create required data structure::
 
 	cd $PROJECT_DIR
 	./manage.py syncdb
 
-*)  Register the model you want to track by placing the following code 
+6)  Register the model you want to track by placing the following code 
     somewhere, preferably in `models.py`::
     
 	import popularity
@@ -81,7 +82,7 @@ Installation
     created and that it is deleted when that particular object is deleted as
     well. Also, this keeps track of add dates of objects.
     
-*)  Next, make sure that for every method where you view an object you add the 
+7)  Next, make sure that for every method where you view an object you add the 
     following code (replace <viewed_object> by whatever you are viewing)::
     
 	from popularity.models import ViewTracker
@@ -108,11 +109,11 @@ Installation
     the following in your `settings.py`::
     
 	TEMPLATE_CONTEXT_PROCESSORS = (
-		...
-		'popularity.context_processors.most_popular',
-		'popularity.context_processors.most_viewed',
-		'popularity.context_processors.recently_viewed',
-		'popularity.context_processors.recently_added',
+	    ...
+	    'popularity.context_processors.most_popular',
+	    'popularity.context_processors.most_viewed',
+	    'popularity.context_processors.recently_viewed',
+	    'popularity.context_processors.recently_added',
 	)
     
     Here, the first processors are Django's default. The latter respectively
