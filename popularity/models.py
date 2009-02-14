@@ -459,7 +459,11 @@ class ViewTracker(models.Model):
         qs.update(views=F('views') + 1, viewed=datetime.now())
         
         # This is here mainly for compatibility reasons
+        if not qs.count():
+            qs.create(views=1, viewed=datetime.now())
+        
         return qs[0]
+    
     
     @classmethod
     def get_views_for(cls, content_object):
