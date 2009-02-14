@@ -5,6 +5,7 @@ from datetime import datetime
 from math import log
 
 from django.db import models, connection
+from django.db.models.aggregates import *
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
@@ -15,6 +16,9 @@ from django.contrib.contenttypes import generic
 from django.conf import settings
 POPULARITY_CHARAGE = float(getattr(settings, 'POPULARITY_CHARAGE', 3600))
 POPULARITY_LISTSIZE = int(getattr(settings, 'POPULARITY_LISTSIZE', 10))
+
+DATABASE_ENGINE = getattr(settings, 'DATABASE_ENGINE')
+COMPATIBLE_DATABASES = ('mysql')
 
 class ViewTrackerQuerySet(models.query.QuerySet):
     _LOGSCALING = log(0.5)
@@ -42,7 +46,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     def _get_db_datetime(self, value=None):
         """ Retrieve an SQL-interpretable representation of the datetime value, or
             now if no value is specified. """
-        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        assert DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         if not value:
             value = datetime.now()
@@ -55,6 +59,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             removing previous parameters, as oppsoed to the normal .extra method). """
         assert self.query.can_filter(), \
                 "Cannot change a query once a slice has been taken"
+
         logging.debug(sql)   
         clone = self._clone()
         clone.query.add_extra({field:sql}, None, None, None, None, None)
@@ -63,7 +68,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     def select_age(self):
         """ Adds age with regards to NOW to the QuerySet
             fields. """
-        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'  
+        assert DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
         
@@ -75,7 +80,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             in the current QuerySet, unless specified in 'relative_to'.
             
             The relative number of views should always in the range [0, 1]. """
-        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        assert DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         if not relative_to:
             relative_to = self
@@ -83,7 +88,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         assert relative_to.__class__ == self.__class__, \
                 'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
             
-        maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
+        maxviews = relative_to.aggregate(Max('views'))['views__max']
         
         SQL_RELVIEWS = self._SQL_RELVIEWS % {'maxviews' : maxviews}
         
@@ -95,8 +100,8 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             in the current QuerySet, unless specified in 'relative_to'.
 
             The relative age should always in the range [0, 1]. """
-        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
-
+        assert DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
+        
         if not relative_to:
             relative_to = self
 
@@ -120,7 +125,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             is used in multiplication.
             
             The novelty value is always in the range [0, 1]. """
-        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        assert DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         offset = minimum
         factor = 1/(1-offset)
@@ -142,7 +147,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     
     def select_popularity(self):
         """ Compute popularity, which is defined as: views/age. """
-        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        assert DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
         
@@ -155,7 +160,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             
             The relpopularity value should always be in the range [0, 1]. """
 
-        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        assert DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         if not relative_to:
             relative_to = self
@@ -167,7 +172,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
 
         SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
 
-        maxpopularity = relative_to.extra(select={'maxpopularity':'MAX(%s)' % SQL_POPULARITY}).values('maxpopularity')[0]['maxpopularity']
+        maxpopularity = relative_to.extra(select={'popularity' : SQL_POPULARITY}).aggregates(Max('popularity'))['popularity__max']
         
         SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
                                                        'maxpopularity' : maxpopularity }
@@ -178,7 +183,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         """ Returns the original QuerySet with an extra field 'random' containing a random
             value in the range [0,1] to use for ordering.
         """
-        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        assert DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         SQL_RANDOM = self.RANDOM
         
@@ -186,28 +191,28 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     
     def select_relevance(relative_to=None, minimum_novelty=0.1, charage_novelty=None):
         """ This adds the multiplication of novelty and relpopularity to the QuerySet, as 'relevance'. """
-        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        assert DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         if not relative_to:
             relative_to = self
         
         assert relative_to.__class__ == self.__class__, \
                 'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
-    
+        
         _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
-    
+        
         SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
-
-        maxpopularity = relative_to.extra(select={'maxpopularity':'MAX(%s)' % SQL_POPULARITY}).values('maxpopularity')[0]['maxpopularity']
-
+        
+        maxpopularity = relative_to.extra(select={'popularity' : SQL_POPULARITY}).aggregates(Max('popularity'))['popularity__max']
+        
         SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
                                                        'maxpopularity' : maxpopularity }
-
+        
         # Characteristic age, default one hour
         # After this amount (in seconds) the novelty is exactly 0.5
         if not charage_novelty:
            charage_novelty = POPULARITY_CHARAGE
-
+        
         offset = minimum_novelty
         factor = 1/(1-offset)
         
@@ -234,7 +239,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             Please do note that the relative age is the only value here that INCREASES over time so
             you might want to specify a NEGATIVE value here and use an offset, just to compensate. 
         """
-        assert settings.DATABASE_ENGINE == 'mysql', 'This only works for MySQL.'
+        assert DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         if not relative_to:
             relative_to = self
@@ -244,13 +249,13 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         
         assert abs(relview+relage+novelty+relpopularity+random+relevance) > 0, 'You should at least give me something to order by!'
         
-        maxviews = relative_to.extra(select={'maxviews':'MAX(views)'}).values('maxviews')[0]['maxviews']
+        maxviews = relative_to.aggregates(Max('views'))['views__max']
         
         SQL_RELVIEWS = self._SQL_RELVIEWS % {'maxviews' : maxviews}
         
         _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
         
-        maxage = relative_to.extra(select={'maxage':'MAX(%s)' % _SQL_AGE}).values('maxage')[0]['maxage']
+        maxage = relative_to_extra(select={'age':_SQL_AGE}).aggregates(Max('age'))['age__max']
 
         SQL_RELAGE = self._SQL_RELAGE % {'age'    : _SQL_AGE,
                                          'maxage' : maxage}
@@ -269,7 +274,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
                                             
         SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
 
-        maxpopularity = relative_to.extra(select={'maxpopularity':'MAX(%s)' % SQL_POPULARITY}).values('maxpopularity')[0]['maxpopularity']
+        maxpopularity = relative_to.extra(select={'popularity':SQL_POPULARITY}).aggregates(Max('popularity'))['popularity__max']
 
         SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
                                                        'maxpopularity' : maxpopularity }
