@@ -9,6 +9,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
 from django.conf import settings
+# Settings for popularity:
+# - POPULARITY_LISTSIZE; default size of the lists returned by get_most_popular etc.
+# - POPULARITY_CHARAGE; characteristic age used for measuring the popularity
 
 class ViewTrackerQuerySet(models.query.QuerySet):
     _LOGSCALING = log(0.5)
@@ -122,7 +125,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         # Characteristic age, default one hour
         # After this amount (in seconds) the novelty is exactly 0.5
         if not charage:
-            charage = float(getattr(settings, 'CHARAGE', 3600))
+            charage = float(getattr(settings, 'POPULARITY_CHARAGE', 3600))
         
         _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
         
@@ -200,7 +203,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         # Characteristic age, default one hour
         # After this amount (in seconds) the novelty is exactly 0.5
         if not charage_novelty:
-           charage_novelty = float(getattr(settings, 'CHARAGE', 3600))
+           charage_novelty = float(getattr(settings, 'POPULARITY_CHARAGE', 3600))
 
         offset = minimum_novelty
         factor = 1/(1-offset)
@@ -252,7 +255,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         # Characteristic age, default one hour
         # After this amount (in seconds) the novelty is exactly 0.5
         if not charage_novelty:
-            charage_novelty = float(getattr(settings, 'CHARAGE', 3600)) 
+            charage_novelty = float(getattr(settings, 'POPULARITY_CHARAGE', 3600)) 
             
         # Here, because the ordering field is not normalize, we don't have to bother about a minimum for the novelty
         SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
@@ -288,18 +291,34 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         
         return self._add_extra('ordering', SQL_ORDERING)
         
-    def get_recently_viewed(self, limit=10):
+    def get_recently_viewed(self, limit=None):
         """ Returns the most recently viewed objects. """
-        return self.order_by('-last_view').limit(limit)
+        if not limit:
+            limit = int(getattr(settings, 'POPULARITY_LISTSIZE', 10))
+            
+        return self.order_by('-last_view')[:limit]
     
-    def get_recently_added(self, limit=10):
+    def get_recently_added(self, limit=None):
         """ Returns the objects with the most rcecent first_view. """
-        return self.order_by('-first_view').limit(limit)
+        if not limit:
+            limit = int(getattr(settings, 'POPULARITY_LISTSIZE', 10))
+            
+        return self.order_by('-first_view')[:limit]
     
-    def get_most_popular(self, limit=10):
+    def get_most_popular(self, limit=None):
         """ Returns the most popular objects. """
-        return self.select_popularity().order_by('-popularity').limit(limit)
+        if not limit:
+            limit = int(getattr(settings, 'POPULARITY_LISTSIZE', 10))
+            
+        return self.select_popularity().order_by('-popularity')[:limit]
     
+    def get_most_viewed(self, limit=None):
+        """ Returns the most viewed objects. """
+        if not limit:
+            limit = int(getattr(settings, 'POPULARITY_LISTSIZE', 10))
+            
+        return self.order_by('-views')[:limit]
+        
     def get_for_model(self, model):
         """ Returns the objects and its views for a certain model. """
         return self.get_for_models([model])
@@ -377,6 +396,9 @@ class ViewTrackerManager(models.Manager):
     
     def get_recently_viewed(self, *args, **kwargs):
         return self.get_query_set().get_recently_viewed(*args, **kwargs)
+    
+    def get_most_viewed(self, *args, **kwargs):
+        return self.get_query_set().get_most_viewed(*args, **kwargs)
     
     def get_most_popular(self, *args, **kwargs):
             return self.get_query_set().get_most_popular(*args, **kwargs)

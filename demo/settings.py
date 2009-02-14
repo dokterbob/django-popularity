@@ -68,6 +68,18 @@ MIDDLEWARE_CLASSES = (
     'djangologging.middleware.LoggingMiddleware',
 )
 
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.core.context_processors.auth',
+    'django.core.context_processors.debug',
+    'django.core.context_processors.i18n',
+    'django.core.context_processors.media',
+    'django.core.context_processors.request',
+    'popularity.context_processors.most_popular',
+    'popularity.context_processors.most_viewed',
+    'popularity.context_processors.recently_viewed',
+    'popularity.context_processors.recently_added',
+)
+
 ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
@@ -91,7 +103,7 @@ if DEBUG:
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='[%d/%b/%Y %H:%M:%S]')
 
-CHARAGE = 5
+POPULARITY_CHARAGE = 5
 
 INSTALLED_APPS = (
     'django.contrib.auth',
