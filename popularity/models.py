@@ -306,7 +306,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         if not limit:
             limit = POPULARITY_LISTSIZE
             
-        return self.order_by('-last_view').select_related()[:limit]
+        return self.order_by('-viewed').select_related()[:limit]
     
     def get_recently_added(self, limit=None):
         """ Returns the objects with the most rcecent added. """
@@ -436,15 +436,15 @@ class ViewTracker(models.Model):
     content_object = generic.GenericForeignKey('content_type', 'object_id')
     
     added = models.DateTimeField(auto_now_add=True)
-    last_view = models.DateTimeField(auto_now=True)
+    viewed = models.DateTimeField(auto_now=True)
     
     views = models.PositiveIntegerField(default=0)
     
     objects = ViewTrackerManager()
     
     class Meta:
-        get_latest_by = 'last_view'
-        ordering = ['-views', '-last_view', 'added']
+        get_latest_by = 'viewed'
+        ordering = ['-views', '-viewed', 'added']
         unique_together = ('content_type', 'object_id')
     
     def __unicode__(self):
@@ -457,7 +457,7 @@ class ViewTracker(models.Model):
         ct = ContentType.objects.get_for_model(content_object)
         qs = cls.objects.filter(content_type=ct, object_id=content_object.pk)
         
-        qs.update(views=F('views') + 1, last_view=datetime.now())
+        qs.update(views=F('views') + 1, viewed=datetime.now())
         
         # This is here mainly for compatibility reasons
         return qs[0]

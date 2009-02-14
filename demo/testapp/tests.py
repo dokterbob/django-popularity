@@ -3,7 +3,6 @@ import unittest
 from time import sleep
 from models import *
 from popularity.models import *
-from popularity import register
 
 import random
 from datetime import datetime
@@ -67,7 +66,7 @@ class PopularityTestCase(unittest.TestCase):
             viewtrackers = ViewTracker.objects.get_for_objects(self.objs)
         
             for tracker in viewtrackers:
-                self.assert_(tracker.last_view > tracker.added)
+                self.assert_(tracker.viewed > tracker.added)
     
     def testAge(self):
         from django.conf import settings
@@ -98,14 +97,14 @@ class PopularityTestCase(unittest.TestCase):
                 
                 # Do the same checks
                 new_time = datetime.now()
-                last_view = viewtracker.last_view
+                viewed = viewtracker.viewed
                 
                 # These should be the same with at most a 1 second difference
-                self.assert_(abs((new_time-last_view).seconds) <= 1, "new_time=%s, last_view=%s" % (new_time, last_view))
+                self.assert_(abs((new_time-viewed).seconds) <= 1, "new_time=%s, viewed=%s" % (new_time, viewed))
                                 
                 # Now see if we have calculated the age right, using previous queries
                 calc_age = (new_time - old_time).seconds
-                db_age = (last_view - added).seconds
+                db_age = (viewed - added).seconds
                 self.assert_(abs(db_age - calc_age) <= 1, "db_age=%d, calc_age=%d" % (db_age, calc_age))
                 
                 # Check if we indeed waited the righ amount of time 'test the test'
@@ -160,21 +159,25 @@ class PopularityTestCase(unittest.TestCase):
         from django.conf import settings
         if settings.DATABASE_ENGINE == 'mysql':
             for x in xrange(REPEAT_COUNT):
-                new = TestObject(title='Obj q')
-                new.save()
+                try:
+                    new = TestObject(title='Obj q')
+                    new.save()
     
-                viewtracker = ViewTracker.add_view_for(new)
+                    viewtracker = ViewTracker.add_view_for(new)
             
-                relage = ViewTracker.objects.select_relage()
-                youngest = relage.order_by('relage')[0]
+                    relage = ViewTracker.objects.select_relage()
+                    youngest = relage.order_by('relage')[0]
             
-                self.assertEqual(viewtracker, youngest)
-                self.assertAlmostEquals(float(youngest.relage), 0.0, 2)
+                    self.assertEqual(viewtracker, youngest)
+                    self.assertAlmostEquals(float(youngest.relage), 0.0, 2)
             
-                oldest_age = ViewTracker.objects.select_age().order_by('-age')[0]
-                oldest_relage = relage.order_by('-relage')[0]
+                    oldest_age = ViewTracker.objects.select_age().order_by('-age')[0]
+                    oldest_relage = relage.order_by('-relage')[0]
             
-                self.assertEqual(oldest_relage, oldest_age)
-                self.assertAlmostEquals(float(oldest_relage.relage), 1.0, 2)
+                    self.assertEqual(oldest_relage, oldest_age)
+                    self.assertAlmostEquals(float(oldest_relage.relage), 1.0, 2)
                 
-                sleep(MAX_SECONDS)
+                    sleep(random.randint(1,MAX_SECONDS))
+                except:
+                    import ipdb
+                    ipdb.set_trace()
