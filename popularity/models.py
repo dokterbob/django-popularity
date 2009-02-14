@@ -13,7 +13,6 @@ from django.contrib.contenttypes import generic
 # Settings for popularity:
 # - POPULARITY_LISTSIZE; default size of the lists returned by get_most_popular etc.
 # - POPULARITY_CHARAGE; characteristic age used for measuring the popularity
-# - POPULARITY_AUTOCREATE; automatically create a ViewTracker for each object that is created
 
 from django.conf import settings
 POPULARITY_CHARAGE = float(getattr(settings, 'POPULARITY_CHARAGE', 3600))
