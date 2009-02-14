@@ -29,7 +29,7 @@ is as of now not yet mature enough.
 
 Installation
 ============
-1)  Change into some sensible directory and get the latest version from 
+1)  Change into some suitable directory and get the latest version from 
     GitHub by doing::
     
 	git clone git://github.com/dokterbob/django-popularity.git
@@ -53,7 +53,7 @@ Installation
     
     (Here `$PROJECT_DIR` is your project root directory.)
     
-4)  Add popularity to `INSTALLED_APPS` in settings.py.
+4)  Add popularity to `INSTALLED_APPS` in settings.py::
 
 	INSTALLED_APPS = (
 	    ...
@@ -121,7 +121,7 @@ Installation
     to the RequestContext.
     
     (If you don't know what a RequestContext is, do not pity yourself.
-    Visit http://docs.djangoproject.com/en/dev/ref/templates/api/#id1)
+    Visit http://docs.djangoproject.com/en/dev/ref/templates/api/#id1.)
     
 9)  Now you're done. Go have beer. Or a whiskey. Or coffee. Suit yourself.
     If you're still not done learning, try reading through the many methods
