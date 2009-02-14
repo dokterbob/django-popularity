@@ -5,3 +5,6 @@ class TestObject(models.Model):
     
     def __unicode__(self):
         return self.title
+
+import popularity
+popularity.register(TestObject)

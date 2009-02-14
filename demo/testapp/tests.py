@@ -3,6 +3,7 @@ import unittest
 from time import sleep
 from models import *
 from popularity.models import *
+from popularity import register
 
 import random
 from datetime import datetime
@@ -14,7 +15,7 @@ class PopularityTestCase(unittest.TestCase):
     def random_view(self):
         ViewTracker.add_view_for(random.choice(self.objs))
         
-    def setUp(self):
+    def setUp(self):        
         TestObject(title='Obj a').save()
         TestObject(title='Obj b').save()
         TestObject(title='Obj c').save()
@@ -66,7 +67,7 @@ class PopularityTestCase(unittest.TestCase):
             viewtrackers = ViewTracker.objects.get_for_objects(self.objs)
         
             for tracker in viewtrackers:
-                self.assert_(tracker.last_view > tracker.first_view)
+                self.assert_(tracker.last_view > tracker.added)
     
     def testAge(self):
         from django.conf import settings
@@ -81,12 +82,12 @@ class PopularityTestCase(unittest.TestCase):
                 # Note down the initial time
                 # Request the initial time from the database
                 old_time = datetime.now()
-                first_view = viewtracker.first_view
+                added = viewtracker.added
                 
                 #import ipdb; ipdb.set_trace()
                 
                 # These should be the same with at most a 1 second difference
-                self.assert_(abs((old_time-first_view).seconds) <= 1, "old_time=%s, first_view=%s" % (old_time, first_view))
+                self.assert_(abs((old_time-added).seconds) <= 1, "old_time=%s, added=%s" % (old_time, added))
                 
                 # Wait a random number of seconds
                 wait = random.randint(1,MAX_SECONDS)
@@ -104,7 +105,7 @@ class PopularityTestCase(unittest.TestCase):
                                 
                 # Now see if we have calculated the age right, using previous queries
                 calc_age = (new_time - old_time).seconds
-                db_age = (last_view - first_view).seconds
+                db_age = (last_view - added).seconds
                 self.assert_(abs(db_age - calc_age) <= 1, "db_age=%d, calc_age=%d" % (db_age, calc_age))
                 
                 # Check if we indeed waited the righ amount of time 'test the test'
@@ -145,7 +146,7 @@ class PopularityTestCase(unittest.TestCase):
             new.save()
             
             viewtracker = ViewTracker.add_view_for(new)
-            first_view = viewtracker.first_view
+            added = viewtracker.added
             
             novelty = ViewTracker.objects.select_novelty(charage=MAX_SECONDS).filter(pk=viewtracker.pk)[0].novelty
             self.assertAlmostEquals(float(novelty), 1.0, 1, 'novelty=%f != 1.0' % novelty)
@@ -158,19 +159,22 @@ class PopularityTestCase(unittest.TestCase):
     def testRelage(self):
         from django.conf import settings
         if settings.DATABASE_ENGINE == 'mysql':
-            new = TestObject(title='Obj q')
-            new.save()
+            for x in xrange(REPEAT_COUNT):
+                new = TestObject(title='Obj q')
+                new.save()
     
-            viewtracker = ViewTracker.add_view_for(new)
+                viewtracker = ViewTracker.add_view_for(new)
             
-            relage = ViewTracker.objects.select_relage()
-            youngest = relage.order_by('relage')[0]
+                relage = ViewTracker.objects.select_relage()
+                youngest = relage.order_by('relage')[0]
             
-            self.assertEqual(viewtracker, youngest)
-            self.assertAlmostEquals(float(youngest.relage), 0.0, 2)
+                self.assertEqual(viewtracker, youngest)
+                self.assertAlmostEquals(float(youngest.relage), 0.0, 2)
             
-            oldest_age = ViewTracker.objects.select_age().order_by('-age')[0]
-            oldest_relage = relage.order_by('-relage')[0]
+                oldest_age = ViewTracker.objects.select_age().order_by('-age')[0]
+                oldest_relage = relage.order_by('-relage')[0]
             
-            self.assertEqual(oldest_relage, oldest_age)
-            self.assertAlmostEquals(float(oldest_relage.relage), 1.0, 2)
+                self.assertEqual(oldest_relage, oldest_age)
+                self.assertAlmostEquals(float(oldest_relage.relage), 1.0, 2)
+                
+                sleep(MAX_SECONDS)

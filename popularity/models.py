@@ -5,13 +5,15 @@ from datetime import datetime
 from math import log
 
 from django.db import models, connection
-from django.db.models.aggregates import *
+from django.db.models.aggregates import Max
+from django.db.models.expressions import *
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
 # Settings for popularity:
 # - POPULARITY_LISTSIZE; default size of the lists returned by get_most_popular etc.
 # - POPULARITY_CHARAGE; characteristic age used for measuring the popularity
+# - POPULARITY_AUTOCREATE; automatically create a ViewTracker for each object that is created
 
 from django.conf import settings
 POPULARITY_CHARAGE = float(getattr(settings, 'POPULARITY_CHARAGE', 3600))
@@ -27,7 +29,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         super(self.__class__, self).__init__ (model, *args, **kwargs)
 
         self._SQL_NOW = "'%s'"
-        self._SQL_AGE = 'TIMESTAMPDIFF(SECOND, first_view, %(now)s)'
+        self._SQL_AGE = 'TIMESTAMPDIFF(SECOND, added, %(now)s)'
         self._SQL_RELVIEWS = '(views/%(maxviews)d)'
         self._SQL_RELAGE = '(%(age)s/%(maxage)d)'
         self._SQL_NOVELTY = '(%(factor)s * EXP(%(logscaling)s * %(age)s/%(charage)s) + %(offset)s)'
@@ -307,11 +309,11 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         return self.order_by('-last_view').select_related()[:limit]
     
     def get_recently_added(self, limit=None):
-        """ Returns the objects with the most rcecent first_view. """
+        """ Returns the objects with the most rcecent added. """
         if not limit:
             limit = POPULARITY_LISTSIZE
             
-        return self.order_by('-first_view').select_related()[:limit]
+        return self.order_by('-added').select_related()[:limit]
     
     def get_most_popular(self, limit=None):
         """ Returns the most popular objects. """
@@ -433,7 +435,7 @@ class ViewTracker(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = generic.GenericForeignKey('content_type', 'object_id')
     
-    first_view = models.DateTimeField(auto_now_add=True)
+    added = models.DateTimeField(auto_now_add=True)
     last_view = models.DateTimeField(auto_now=True)
     
     views = models.PositiveIntegerField(default=0)
@@ -442,32 +444,27 @@ class ViewTracker(models.Model):
     
     class Meta:
         get_latest_by = 'last_view'
-        ordering = ['-views', '-last_view', 'first_view']
+        ordering = ['-views', '-last_view', 'added']
         unique_together = ('content_type', 'object_id')
     
     def __unicode__(self):
         return u"%s, %d views" % (self.content_object, self.views)
-    
-    def increment(self):
-        """ This increments my view count.
-            TODO: optimize in SQL. """
-        logging.debug('Incrementing views for %s from %d to %d' % (self.content_object, self.views, self.views+1))
-        self.views = self.views + 1
-        self.save()
-        
+            
     @classmethod
     def add_view_for(cls, content_object):
         """ This increments the viewcount for a given object. """
-        viewtracker = cls.objects.get_for_object(content_object, create=True)
         
-        viewtracker.increment()
+        ct = ContentType.objects.get_for_model(content_object)
+        qs = cls.objects.filter(content_type=ct, object_id=content_object.pk)
         
-        return viewtracker
+        qs.update(views=F('views') + 1, last_view=datetime.now())
+        
+        # This is here mainly for compatibility reasons
+        return qs[0]
     
     @classmethod
     def get_views_for(cls, content_object):
         """ Gets the total number of views for content_object. """
-        ct = ContentType.objects.get_for_model(content_object)
         
         """ If we don't have any views, return 0. """
         try:
@@ -476,3 +473,4 @@ class ViewTracker(models.Model):
             return 0 
         
         return viewtracker.views
+
