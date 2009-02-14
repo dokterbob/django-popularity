@@ -94,5 +94,5 @@ but you can already start logging now and choose to use them later.
 
 License
 =======
-The django-agenda app is released 
+This application is released 
 under the GPL version 3.
