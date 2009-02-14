@@ -460,7 +460,7 @@ class ViewTracker(models.Model):
         
         # This is here mainly for compatibility reasons
         if not qs.count():
-            qs.create(views=1, viewed=datetime.now())
+            qs.create(content_type=ct, object_id=content_object.pk, views=1, viewed=datetime.now())
         
         return qs[0]
     
