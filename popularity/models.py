@@ -8,10 +8,13 @@ from django.db import models, connection
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from django.conf import settings
 # Settings for popularity:
 # - POPULARITY_LISTSIZE; default size of the lists returned by get_most_popular etc.
 # - POPULARITY_CHARAGE; characteristic age used for measuring the popularity
+
+from django.conf import settings
+POPULARITY_CHARAGE = float(getattr(settings, 'POPULARITY_CHARAGE', 3600))
+POPULARITY_LISTSIZE = int(getattr(settings, 'POPULARITY_LISTSIZE', 10))
 
 class ViewTrackerQuerySet(models.query.QuerySet):
     _LOGSCALING = log(0.5)
@@ -125,8 +128,8 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         # Characteristic age, default one hour
         # After this amount (in seconds) the novelty is exactly 0.5
         if not charage:
-            charage = float(getattr(settings, 'POPULARITY_CHARAGE', 3600))
-        
+            charage = POPULARITY_CHARAGE
+            
         _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
         
         SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
@@ -203,7 +206,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         # Characteristic age, default one hour
         # After this amount (in seconds) the novelty is exactly 0.5
         if not charage_novelty:
-           charage_novelty = float(getattr(settings, 'POPULARITY_CHARAGE', 3600))
+           charage_novelty = POPULARITY_CHARAGE
 
         offset = minimum_novelty
         factor = 1/(1-offset)
@@ -255,7 +258,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         # Characteristic age, default one hour
         # After this amount (in seconds) the novelty is exactly 0.5
         if not charage_novelty:
-            charage_novelty = float(getattr(settings, 'POPULARITY_CHARAGE', 3600)) 
+            charage_novelty = POPULARITY_CHARAGE
             
         # Here, because the ordering field is not normalize, we don't have to bother about a minimum for the novelty
         SQL_NOVELTY =  self._SQL_NOVELTY % {'logscaling' : self._LOGSCALING, 
@@ -294,28 +297,28 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     def get_recently_viewed(self, limit=None):
         """ Returns the most recently viewed objects. """
         if not limit:
-            limit = int(getattr(settings, 'POPULARITY_LISTSIZE', 10))
+            limit = POPULARITY_LISTSIZE
             
         return self.order_by('-last_view')[:limit]
     
     def get_recently_added(self, limit=None):
         """ Returns the objects with the most rcecent first_view. """
         if not limit:
-            limit = int(getattr(settings, 'POPULARITY_LISTSIZE', 10))
+            limit = POPULARITY_LISTSIZE
             
         return self.order_by('-first_view')[:limit]
     
     def get_most_popular(self, limit=None):
         """ Returns the most popular objects. """
         if not limit:
-            limit = int(getattr(settings, 'POPULARITY_LISTSIZE', 10))
+            limit = POPULARITY_LISTSIZE
             
         return self.select_popularity().order_by('-popularity')[:limit]
     
     def get_most_viewed(self, limit=None):
         """ Returns the most viewed objects. """
         if not limit:
-            limit = int(getattr(settings, 'POPULARITY_LISTSIZE', 10))
+            limit = POPULARITY_LISTSIZE
             
         return self.order_by('-views')[:limit]
         
