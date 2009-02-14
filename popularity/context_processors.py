@@ -7,7 +7,7 @@ def recently_added(request):
     return {'recently_added' : ViewTracker.objects.get_recently_added() }
 
 def recently_viewed(request):
-    return {'recently_added' : ViewTracker.objects.get_recently_viewed() }
+    return {'recently_viewed' : ViewTracker.objects.get_recently_viewed() }
 
 def most_viewed(request):
-    return {'recently_added' : ViewTracker.objects.get_most_viewed() }
+    return {'most_viewed' : ViewTracker.objects.get_most_viewed() }
