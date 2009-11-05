@@ -4,7 +4,7 @@ from models import ViewTracker
 
 view = django.dispatch.Signal()
 
-def view_handler(signal, sender):
+def view_handler(signal, sender, **kwargs):
     ViewTracker.add_view_for(sender)
 
 view.connect(view_handler)
