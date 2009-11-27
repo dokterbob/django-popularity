@@ -76,7 +76,7 @@ Installation
     somewhere, preferably in `models.py`::
     
 	import popularity
-	popularity.register(<myobject>)
+	popularity.register(<mymodel>)
     
     This will assure that a ViewTracker gets created for each object that is 
     created and that it is deleted when that particular object is deleted as
@@ -98,7 +98,7 @@ Installation
     
 	from popularity.signals import view
 	...
-	view.send(myinstance)
+	view.send(<myinstance>)
     
     As there are multiple methods to do this, just pick one. They should be 
     equally good. If you have a preference for either one, please let me know
