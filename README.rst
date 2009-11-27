@@ -19,7 +19,7 @@ Also, please note that as of now we have about zero documentation.
 
 Requirements
 ============
-Short answer: MySQL >= 4.1.1, Django >= 
+Short answer: MySQL >= 4.1.1, Django >= 1.1
 
 Long answer:
 Currently, this has only beentested for MySQL, thought it might work for Postgres and others as well (though SQLite might make some trouble out of it). If you do manage to get it to work (with or without modifications), please let me know so other users can profit from it as well.
