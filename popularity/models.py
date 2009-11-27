@@ -456,14 +456,13 @@ class ViewTracker(models.Model):
         ct = ContentType.objects.get_for_model(content_object)
         qs = cls.objects.filter(content_type=ct, object_id=content_object.pk)
         
-        qs.update(views=F('views') + 1, viewed=datetime.now())
+        rows = qs.update(views=F('views') + 1, viewed=datetime.now())
         
         # This is here mainly for compatibility reasons
-        if not qs.count():
+        if not rows:
             qs.create(content_type=ct, object_id=content_object.pk, views=1, viewed=datetime.now())
         
         return qs[0]
-    
     
     @classmethod
     def get_views_for(cls, content_object):
