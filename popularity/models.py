@@ -454,13 +454,20 @@ class ViewTracker(models.Model):
         """ This increments the viewcount for a given object. """
         
         ct = ContentType.objects.get_for_model(content_object)
+        assert ct != ContentType.objects.get_for_model(cls), 'Cannot add ViewTracker for ViewTracker.'
+        
         qs = cls.objects.filter(content_type=ct, object_id=content_object.pk)
+        
+        assert qs.count() == 0 or qs.count() == 1, 'More than one ViewTracker for object %s' % content_object
         
         rows = qs.update(views=F('views') + 1, viewed=datetime.now())
         
         # This is here mainly for compatibility reasons
         if not rows:
             qs.create(content_type=ct, object_id=content_object.pk, views=1, viewed=datetime.now())
+            logging.debug('ViewTracker created for object %s' % content_object)
+        else:
+            logging.debug('Views updated to %d for %s' % (qs[0].views, content_object))
         
         return qs[0]
     
