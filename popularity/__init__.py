@@ -5,6 +5,8 @@ from django.db.models.signals import post_save, pre_delete
 
 from models import ViewTracker
 
+VERSION = (0, 1, None)
+
 def post_save_handler(signal, sender, instance, created, raw, **kwargs):
     if created:
         ct = ContentType.objects.get_for_model(sender)
@@ -14,9 +16,7 @@ def post_save_handler(signal, sender, instance, created, raw, **kwargs):
 
 def pre_delete_handler(signal, sender, instance, **kwargs):
     ct = ContentType.objects.get_for_model(sender)
-    tracker = ViewTracker.objects.filter(content_type=ct, object_id=instance.pk)
-    assert tracker.count() == 1, 'There are less or more than one ViewTrackers for object %s.' % instance
-    tracker.delete()
+    tracker = ViewTracker.objects.filter(content_type=ct, object_id=instance.pk).delete()
     logging.debug('ViewTracker automatically deleted for object %s' % instance)
 
 def register(mymodel):

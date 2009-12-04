@@ -122,6 +122,48 @@ Installation
     
     (If you don't know what a RequestContext is, do not pity yourself.
     Visit http://docs.djangoproject.com/en/dev/ref/templates/api/#id1.)
+
+    A second way is to use template tags.  As with all sets of custom tags you must 
+    first call {% load popularity_tags %} in your template.  There 6 template tags you 
+    can use which are described below.
+    
+    :Tag: views_for_object
+    :Usage: `{% views_for_object widget as views %}`
+    :Description: Retrieves the number of views for and stores them in a context variable.
+    
+    :Tag: views_for_objects
+    :Usage: `{% views_for_objects widget_list as view_count %}`
+    :Description: Retrieves the number of views for each object and stores them in an attribute.
+        After using this tag the views for each widget in the widget_list can be accessed 
+        through widget_list.view_count.
+
+    :Tag: most_popular_for_model
+    :Usage: `{% most_popular_for_model main.model_name as popular_models %}` or
+        `{% most_popular_for_model main.model_name as popular_models limit 20 %}`
+    :Description: Retrieves the ViewTrackers for the most popular instances of the given model.
+        If the limit is not given it will use settings.POPULARITY_LISTSIZE.  The model should be
+        given by the app name followed by the model name such as comments.Comment or auth.User.
+
+    :Tag: most_viewed_for_model
+    :Usage: `{% most_viewed_for_model main.model_name as viewed_models %}` or
+        `{% most_viewed_for_model main.model_name as viewed_models limit 20 %}`
+    :Description: Retrieves the ViewTrackers for the most viewed instances of the given model.
+        If the limit is not given it will use settings.POPULARITY_LISTSIZE.  The model should be
+        given by the app name followed by the model name such as comments.Comment or auth.User.
+
+    :Tag: recently_viewed_for_model
+    :Usage: `{% recently_viewed_for_model main.model_name as recent_models %}` or
+        `{% recently_viewed_for_model main.model_name as recent_models limit 20 %}`
+    :Description: Retrieves the ViewTrackers for the most recently viewed instances of the given model.
+        If the limit is not given it will use settings.POPULARITY_LISTSIZE.  The model should be
+        given by the app name followed by the model name such as comments.Comment or auth.User.
+    
+    :Tag: recently_added_for_model
+    :Usage: `{% recently_added_for_model main.model_name as recent_models %}` or
+        `{% recently_added_for_model main.model_name as recent_models limit 20 %}`
+    :Description: Retrieves the ViewTrackers for the most recently added instances of the given model.
+        If the limit is not given it will use settings.POPULARITY_LISTSIZE.  The model should be
+        given by the app name followed by the model name such as comments.Comment or auth.User.
     
 9)  Now you're done. Go have beer. Or a whiskey. Or coffee. Suit yourself.
     If you're still not done learning, try reading through the many methods
