@@ -119,7 +119,7 @@ Installation
 	)
     
     You can now register views by requesting the url `/viewtracker/<content_type_id>/<object_id>/`
-    which is facilitated by two lines of JavaScript::
+    which is facilitated by two lines of JavaScript (using something like jQuery)::
     
 	function add_view_for(content_type_id, object_id) {
 	    $.get('/viewtracker/' + content_type_id + '/' + object_id+'/')
