@@ -3,7 +3,7 @@
 from os import path
 PROJECT_ROOT = path.dirname(__file__)
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -15,7 +15,6 @@ MANAGERS = ADMINS
 
 DATABASE_ENGINE = 'mysql'
 DATABASE_NAME = 'django_popularity'
-TEST_DATABASE_NAME = DATABASE_NAME
 DATABASE_USER = 'root'             # Not used with sqlite3.
 DATABASE_PASSWORD = ''         # Not used with sqlite3.
 DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
@@ -26,11 +25,11 @@ DATABASE_PORT = ''             # Set to empty string for default. Not used with 
 # although not all choices may be available on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'Europe/Amsterdam'
+#TIME_ZONE = 'Europe/Amsterdam'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
-LANGUAGE_CODE = 'nl-nl'
+#LANGUAGE_CODE = 'nl-nl'
 
 SITE_ID = 1
 
