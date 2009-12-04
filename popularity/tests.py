@@ -1,11 +1,13 @@
+import random
 import unittest
-from django.template import Context, Template
 
 from time import sleep
-from popularity.models import *
-
-import random
 from datetime import datetime
+
+from django.template import Context, Template
+from django.contrib.contenttypes.models import ContentType
+
+from popularity.models import *
 
 REPEAT_COUNT = 3
 MAX_SECONDS = 2
@@ -173,28 +175,24 @@ class PopularityTestCase(unittest.TestCase):
         from django.conf import settings
         if settings.DATABASE_ENGINE == 'mysql':
             for x in xrange(REPEAT_COUNT):
-                try:
-                    new = TestObject(title='Obj q')
-                    new.save()
-    
-                    viewtracker = ViewTracker.add_view_for(new)
+                new = TestObject(title='Obj q')
+                new.save()
+
+                viewtracker = ViewTracker.add_view_for(new)
+        
+                relage = ViewTracker.objects.select_relage()
+                youngest = relage.order_by('relage')[0]
+        
+                self.assertEqual(viewtracker, youngest)
+                self.assertAlmostEquals(float(youngest.relage), 0.0, 2)
+        
+                oldest_age = ViewTracker.objects.select_age().order_by('-age')[0]
+                oldest_relage = relage.order_by('-relage')[0]
+        
+                self.assertEqual(oldest_relage, oldest_age)
+                self.assertAlmostEquals(float(oldest_relage.relage), 1.0, 2)
             
-                    relage = ViewTracker.objects.select_relage()
-                    youngest = relage.order_by('relage')[0]
-            
-                    self.assertEqual(viewtracker, youngest)
-                    self.assertAlmostEquals(float(youngest.relage), 0.0, 2)
-            
-                    oldest_age = ViewTracker.objects.select_age().order_by('-age')[0]
-                    oldest_relage = relage.order_by('-relage')[0]
-            
-                    self.assertEqual(oldest_relage, oldest_age)
-                    self.assertAlmostEquals(float(oldest_relage.relage), 1.0, 2)
-                
-                    sleep(random.randint(1,MAX_SECONDS))
-                except:
-                    import ipdb
-                    ipdb.set_trace()
+                sleep(random.randint(1,MAX_SECONDS))
 
 class TemplateTagsTestCase(unittest.TestCase):        
     def setUp(self):
@@ -342,3 +340,13 @@ class TemplateTagsTestCase(unittest.TestCase):
         for obj_view in c['added_objs']:
             self.assertEqual(obj_view.object_id, count)
             count -= 1
+    
+    def testViewTrack(self):
+        ct = ContentType.objects.get_for_model(TestObject)
+        for myobject in self.objs:
+            t = Template('{% load popularity_tags %}{{ myobject|viewtrack }}')
+            c = Context({'myobject' : myobject})
+            res = t.render(c)
+            
+            self.assertEqual(res, 'add_view_for(%d,%d)' % (ct.pk, myobject.pk))
+        
