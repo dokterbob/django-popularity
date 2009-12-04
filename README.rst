@@ -1,6 +1,8 @@
 =================
 Django Popularity
 =================
+Generic view- and popularity tracking pluggable for Django
+----------------------------------------------------------
 
 What is it?
 ===========
@@ -14,8 +16,9 @@ and view count.
 
 Status
 ======
-We are nearing production stage, let's call it an early alpha. ;)
-Also, please note that as of now we have about zero documentation.
+This app is currently being used in several small-scale production environments.
+However, it is probably that it still has a few kinks here and there and a fair bit
+of functionality is still undocumented. 
 
 Requirements
 ============
@@ -29,7 +32,7 @@ is as of now not yet mature enough.
 
 Installation
 ============
-1)  Change into some suitable directory and get the latest version from 
+#)  Change into some suitable directory and get the latest version from 
     GitHub by doing::
     
 	git clone git://github.com/dokterbob/django-popularity.git
@@ -37,23 +40,13 @@ Installation
     (In case you don't have or like Git, get the latest tarball from
     http://github.com/dokterbob/django-popularity/tarball/master.)
     
-2)  Configure a test database in `demo/settings.py` and run the unit tests
-    to see if you are to expect any trouble. If you're a fool, safely ignore 
-    this step::
-    
-	cd demo
-	./manage.py test
-    
-    If this fails, please contact me!
-    If it doesn't: that's a good sign, chap! Go on to the next step.
-    
-3)  Link the popularity directory to your application tree::
+#)  Link the popularity directory to your application tree::
     
 	ln -s django-popularity/popularity $PROJECT_DIR/popularity
     
     (Here `$PROJECT_DIR` is your project root directory.)
     
-4)  Add popularity to `INSTALLED_APPS` in settings.py::
+#)  Add popularity to `INSTALLED_APPS` in settings.py::
 
 	INSTALLED_APPS = (
 	    ...
@@ -67,12 +60,19 @@ Installation
     There is also a configuration variable `POPULARITY_LISTSIZE` to set the
     default number of 'popular' items returned.
     
-5)  Create required data structure::
-
+#)  Create required data structure::
+    
 	cd $PROJECT_DIR
 	./manage.py syncdb
-
-6)  Register the model you want to track by placing the following code 
+    
+#)  Run the tests to see if it all works::
+    
+	./manage.py test
+    
+    If this fails, please contact me!
+    If it doesn't: that's a good sign, chap! Go on to the next step.
+    
+#)  Register the model you want to track by placing the following code 
     somewhere, preferably in `models.py`::
     
 	import popularity
@@ -82,7 +82,7 @@ Installation
     created and that it is deleted when that particular object is deleted as
     well. Also, this keeps track of add dates of objects.
     
-7)  Next, make sure that for every method where you view an object you add the 
+#)  Next, make sure that for every method where you view an object you add the 
     following code (replace <viewed_object> by whatever you are viewing)::
     
 	from popularity.models import ViewTracker
@@ -93,7 +93,7 @@ Installation
     django_popularity is not present, use the example code in 
     `demo/testapp/views.py`.
     
-    Alternatively, you can also use signals to register the viewing of 
+    **Alternatively**, you can also use signals to register the viewing of 
     instances::
     
 	from popularity.signals import view
@@ -103,8 +103,43 @@ Installation
     As there are multiple methods to do this, just pick one. They should be 
     equally good. If you have a preference for either one, please let me know
     because two options to do exactly the same sounds like overhead to me.
-
-8)  Now if you want to use the information you've just gathered, the easiest
+    
+    **Lastly**, django-popularity has recently been extended with a beautiful AJAX way
+    to register views for an object. This is useful for interactive scripted
+    ways of viewing objects, for instance for registering views of movies. As of now it
+    is still very much a work in progress and unit tests have not yet been written for it.
+    (But are, however, much welcomed by the author.)
+    
+    To use this, add the following to your `urls.py`::
+    
+	urlpatterns += patterns('',
+	    ...
+	    (r'^viewtracker/', include('popularity.urls')),
+	    ...
+	)
+    
+    You can now register views by requesting the url `/viewtracker/<content_type_id>/<object_id>/`
+    which is facilitated by two lines of JavaScript::
+    
+	function add_view_for(content_type_id, object_id) {
+	    $.get('/viewtracker/' + content_type_id + '/' + object_id+'/')
+	}
+    
+    To facilitate the useage of this there is a template tag::
+    
+	{% load popularity_tags %}
+	...
+	<img onclick="{{ object|viewtrack }}" />
+	
+    This will render as::
+    
+	<img onclick="add_view_for(<nn>,<nn>)" />
+    
+    **WARNING**: If you use this method, please be aware that it becomes tremendously easier for anyone on
+    the web to register 'fake' views for objects. Hence, this might be considered a security
+    risk.
+    
+#)  Now if you want to use the information you've just gathered, the easiest
     way is to use the included RequestContextProcessors. To do this, include
     the following in your `settings.py`::
     
@@ -165,9 +200,19 @@ Installation
         If the limit is not given it will use settings.POPULARITY_LISTSIZE.  The model should be
         given by the app name followed by the model name such as comments.Comment or auth.User.
     
-9)  Now you're done. Go have beer. Or a whiskey. Or coffee. Suit yourself.
+#)  Now you're done. Go have beer. Or a whiskey. Or coffee. Suit yourself.
     If you're still not done learning, try reading through the many methods
     described in `popularity/models.py` as they are to be documented later.
+
+Credits
+=======
+Django-popularity was initially developed by Mathijs de Bruin <mathijs@mathijsfietst.nl> while
+working for Visualspace <info@visualspace.nl>.
+
+Major and minor contributions to this project were made by:
+
+- Daniel Nordberg <dnordberg@gmail.com>
+- Mark Lavin <markdlavin@gmail.com>
 
 License
 =======
