@@ -5,6 +5,15 @@ from popularity.models import ViewTracker
 
 register = template.Library()
 
+@register.filter
+def viewtrack(value):
+    ''' Add reference to script for adding a view to an object's tracker. 
+        Usage: {{ object|viewtrack }}
+        This will be substituted by: 'add_view_for(content_type_id, object_id)'
+    '''
+    ct = ContentType.objects.get_for_model(value)
+    return 'add_view_for(%d,%d)' % (ct.pk, value.pk)
+
 def validate_template_tag_params(bits, arguments_count, keyword_positions):
     '''
         Raises exception if passed params (`bits`) do not match signature.
