@@ -107,7 +107,7 @@ Installation
     **Lastly**, django-popularity has recently been extended with a beautiful AJAX way
     to register views for an object. This is useful for interactive scripted
     ways of viewing objects, for instance for registering views of movies. As of now it
-    is still very much a work in progress and unit tests have not yet been written for it.
+    is still very much a work in progress but it seems to work quite well.
     (But are, however, much welcomed by the author.)
     
     To use this, add the following to your `urls.py`::
@@ -135,7 +135,7 @@ Installation
     
 	<img onclick="add_view_for(<nn>,<nn>)" />
     
-    **WARNING**: If you use this method, please be aware that it becomes tremendously easier for anyone on
+    **WARNING**: If you use the latter method, please be aware that it becomes tremendously easier for anyone on
     the web to register 'fake' views for objects. Hence, this might be considered a security
     risk.
     
