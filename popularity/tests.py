@@ -9,6 +9,7 @@ from datetime import datetime
 
 REPEAT_COUNT = 3
 MAX_SECONDS = 2
+NUM_TESTOBJECTS = 21
 
 from django.db import models
 
@@ -201,7 +202,7 @@ class TemplateTagsTestCase(unittest.TestCase):
         ViewTracker.objects.all().delete()
 
         self.objs = []
-        for i in xrange(1,21):
+        for i in xrange(1,NUM_TESTOBJECTS):
             self.objs.append(TestObject.objects.create(pk=i, title='Obj %s' % i))
 
         for obj in self.objs:          
