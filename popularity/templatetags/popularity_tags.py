@@ -2,6 +2,7 @@ from django import template
 from django.db.models import get_model
 
 from popularity.models import ViewTracker
+from django.contrib.contenttypes.models import ContentType
 
 register = template.Library()
 
