@@ -18,11 +18,16 @@
 
 from distutils.core import setup
 
+try:
+    README = open('README.rst').read()
+except:
+    README = None
+
 setup(
     name = 'django-popularity',
-    version = "0.1.2",
+    version = "0.1.4",
     description = 'A generic view- and popularity tracking pluggable for Django.',
-    long_description = open('README.rst').read(),
+    long_description = README,
     author = 'Mathijs de Bruin',
     author_email = 'drbob@dokterbob.net',
     url = 'http://github.com/dokterbob/django-popularity',
