@@ -32,7 +32,7 @@ Installation
 ============
 #)  Get it from the Cheese Shop::
     
-	easy_install django_popularity
+	easy_install django-popularity
     
     **Or** get the latest & greatest from Github and link it to your
     application tree::
@@ -228,4 +228,4 @@ Major and minor contributions to this project were made by:
 License
 =======
 This application is released 
-under the GPL version 3.
+under the GNU Affero General Public License version 3.
