@@ -90,8 +90,23 @@ Installation
 	ViewTracker.add_view_for(<viewed_object>)
     
     If you want to make sure that your application also works when
-    django_popularity is not present, use the example code in 
-    `demo/testapp/views.py`.
+    django_popularity is not present, use the following code for importing::
+    
+	import logging
+	
+	from django.conf import settings
+	
+	if 'popularity' in settings.INSTALLED_APPS:
+	   logging.debug('Django_popularity found and will be used.')
+	   from popularity.models import ViewTracker
+	   add_view_for = ViewTracker.add_view_for
+	
+	else:
+	   logging.warn('Django_popularity not found, creating a bogus function.')
+	   # If popularity does not exist, create a bogus function.
+	   def add_view_for(*args, **kwargs):
+	       pass
+	    `demo/testapp/views.py`.
     
     **Alternatively**, you can also use signals to register the viewing of 
     instances::
