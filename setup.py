@@ -20,7 +20,7 @@ from distutils.core import setup
 
 setup(
     name = 'django-popularity',
-    version = "0.1",
+    version = "0.1.1",
     description = 'A generic view- and popularity tracking pluggable for Django.',
     author = 'Mathijs de Bruin',
     author_email = 'drbob@dokterbob.net',
