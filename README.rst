@@ -10,9 +10,7 @@ The pluggable django-popularity makes it very easy to track the amount of
 views for objects, and generate (generic) popularity listings based upon that.
 
 Right now it has a measure for view counts, relative view counts, novelty and
-popularity for ''all'' possible objects. The latter is still to be tested. Soon to be expected: randomness
-and the ability to sort by a combination of novelty, view counts, randomness
-and view count.
+popularity for ''all'' possible objects. 
 
 Status
 ======
@@ -25,7 +23,7 @@ Requirements
 Short answer: MySQL >= 4.1.1, Django >= 1.1
 
 Long answer:
-Currently, this has only beentested for MySQL, thought it might work for Postgres and others as well (though SQLite might make some trouble out of it). If you do manage to get it to work (with or without modifications), please let me know so other users can profit from it as well.
+Currently, this has only been tested for MySQL, thought it might work for Postgres and others as well (though SQLite might make some trouble out of it). If you do manage to get it to work (with or without modifications), please let me know so other users can profit from it as well.
 
 In time, I am planning to migrate most of the functionality to pure-Django QuerySet babble. Sadly enough, the required functionality in the Django API
 is as of now not yet mature enough.

@@ -20,8 +20,9 @@ from distutils.core import setup
 
 setup(
     name = 'django-popularity',
-    version = "0.1.1",
+    version = "0.1.2",
     description = 'A generic view- and popularity tracking pluggable for Django.',
+    long_description = open('README.rst').read(),
     author = 'Mathijs de Bruin',
     author_email = 'drbob@dokterbob.net',
     url = 'http://github.com/dokterbob/django-popularity',
