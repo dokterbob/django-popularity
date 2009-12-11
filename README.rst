@@ -32,16 +32,14 @@ is as of now not yet mature enough.
 
 Installation
 ============
-#)  Change into some suitable directory and get the latest version from 
-    GitHub by doing::
+#)  Get it from the Cheese Shop::
+    
+	easy_install django_popularity
+    
+    **Or** get the latest & greatest from Github and link it to your
+    application tree::
     
 	git clone git://github.com/dokterbob/django-popularity.git
-    
-    (In case you don't have or like Git, get the latest tarball from
-    http://github.com/dokterbob/django-popularity/tarball/master.)
-    
-#)  Link the popularity directory to your application tree::
-    
 	ln -s django-popularity/popularity $PROJECT_DIR/popularity
     
     (Here `$PROJECT_DIR` is your project root directory.)
