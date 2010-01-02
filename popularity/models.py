@@ -375,7 +375,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     def get_for_objects(self, objects):
         """ Gets the viewtrackers for specified objects, or creates them 
             if requested. """
-
+        
         qs = self.none()
         for obj in objects:
             ct = ContentType.objects.get_for_model(obj.__class__)
@@ -383,6 +383,35 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             qs = qs | self.filter(content_type=ct, object_id=obj.pk)
         
         return self & qs
+    
+    def get_for_queryset(self, qs):
+        """ Gets the viewtrackers for the objects in a specified queryset. """
+        
+        ct = ContentType.objects.get_for_model(qs.model)
+            
+        return self.filter(content_type=ct, object_id__in=qs.values('pk'))
+    
+    def get_object_list(self):
+        """ Gets a list with all the objects tracked in the current queryset. """
+        
+        obj_list = []
+        for obj in self:
+            obj_list.append(obj.content_object)
+        
+        return obj_list
+    
+    def get_querysets(self):
+        """ Gets a list of all the querysets for the objects tracked in the current queryset. """
+        
+        qs_list = []
+        for ct_id in self.values('content_type').distinct():
+            ct = ContentType.objects.get_for_id(ct_id)
+            qs_inner = self.filter(content_type=ct_id).values('object_id')
+            qs = ct.model_class().objects.filter(pk__in=qs_inner)
+            
+            qs_list.append(qs)
+        
+        return qs_list
 
 class ViewTrackerManager(models.Manager):
     """ Manager methods to do stuff like:
@@ -441,6 +470,12 @@ class ViewTrackerManager(models.Manager):
     
     def get_for_objects(self, *args, **kwargs):
         return self.get_query_set().get_for_objects(*args, **kwargs)
+    
+    def get_for_queryset(self, *args, **kwargs):
+        return self.get_query_set().get_for_queryset(*args, **kwargs)
+    
+    def get_object_list(self, *args, **kwargs):
+        return self.get_query_set().get_object_list(*args, **kwargs)
 
 
 class ViewTracker(models.Model):
