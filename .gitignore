@@ -6,4 +6,6 @@
 media
 portnumber
 .svn
-
+build
+dist
+MANIFEST
