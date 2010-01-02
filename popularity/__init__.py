@@ -24,5 +24,6 @@ def register(mymodel):
     
     post_save.connect(post_save_handler, sender=mymodel)    
     pre_delete.connect(pre_delete_handler, sender=mymodel)
+    logging.debug('ViewTracker registered for model \'%s\'' % mymodel)
 
 __all__ = ('register', )
