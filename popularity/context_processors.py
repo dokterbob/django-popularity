@@ -1,7 +1,7 @@
 # This file is part of django-popularity.
 # 
 # django-popularity: A generic view- and popularity tracking pluggable for Django. 
-# Copyright (C) 2008-2009 Mathijs de Bruin
+# Copyright (C) 2008-2010 Mathijs de Bruin
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
