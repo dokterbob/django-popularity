@@ -211,6 +211,31 @@ class PopularityTestCase(unittest.TestCase):
                 self.assertAlmostEquals(float(oldest_relage.relage), 1.0, 2)
             
                 sleep(random.randint(1,MAX_SECONDS))
+    
+    def testRelrange(self):
+        """ Very simple test for relative counts: just
+            checks whether the value is between 0 and 1. 
+        """
+        from django.conf import settings
+        if settings.DATABASE_ENGINE == 'mysql':
+            for x in xrange(REPEAT_COUNT):
+                new = TestObject(title='Obj q')
+                new.save()
+                
+                for y in xrange(REPEAT_COUNT):
+                    viewtracker = ViewTracker.add_view_for(new)
+            
+            for tracker in ViewTracker.objects.select_relviews().select_relpopularity().select_relage():
+                self.assert_(tracker.relviews >= 0.)
+                self.assert_(tracker.relviews <= 1.)
+                
+                self.assert_(tracker.relpopularity >= 0.)
+                self.assert_(tracker.relpopularity <= 1.)
+
+                self.assert_(tracker.relage >= 0.)
+                self.assert_(tracker.relage <= 1.)
+
+        
 
 class TemplateTagsTestCase(unittest.TestCase):        
     def setUp(self):
