@@ -191,7 +191,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
 
         SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
 
-        maxpopularity = relative_to.extra(select={'popularity' : SQL_POPULARITY}).aggregates(Max('popularity'))['popularity__max']
+        maxpopularity = relative_to.extra(select={'popularity' : SQL_POPULARITY}).aggregate(Max('popularity'))['popularity__max']
         
         SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
                                                        'maxpopularity' : maxpopularity }
@@ -222,7 +222,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         
         SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
         
-        maxpopularity = relative_to.extra(select={'popularity' : SQL_POPULARITY}).aggregates(Max('popularity'))['popularity__max']
+        maxpopularity = relative_to.extra(select={'popularity' : SQL_POPULARITY}).aggregate(Max('popularity'))['popularity__max']
         
         SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
                                                        'maxpopularity' : maxpopularity }
@@ -268,13 +268,13 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         
         assert abs(relview+relage+novelty+relpopularity+random+relevance) > 0, 'You should at least give me something to order by!'
         
-        maxviews = relative_to.aggregates(Max('views'))['views__max']
+        maxviews = relative_to.aggregate(Max('views'))['views__max']
         
         SQL_RELVIEWS = self._SQL_RELVIEWS % {'maxviews' : maxviews}
         
         _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
         
-        maxage = relative_to_extra(select={'age':_SQL_AGE}).aggregates(Max('age'))['age__max']
+        maxage = relative_to_extra(select={'age':_SQL_AGE}).aggregate(Max('age'))['age__max']
 
         SQL_RELAGE = self._SQL_RELAGE % {'age'    : _SQL_AGE,
                                          'maxage' : maxage}
@@ -293,7 +293,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
                                             
         SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
 
-        maxpopularity = relative_to.extra(select={'popularity':SQL_POPULARITY}).aggregates(Max('popularity'))['popularity__max']
+        maxpopularity = relative_to.extra(select={'popularity':SQL_POPULARITY}).aggregate(Max('popularity'))['popularity__max']
 
         SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
                                                        'maxpopularity' : maxpopularity }
