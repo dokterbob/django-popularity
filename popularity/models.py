@@ -23,7 +23,6 @@ from datetime import datetime
 from math import log
 
 from django.db import models, connection
-from django.db.models.aggregates import Max
 from django.db.models.expressions import *
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
@@ -107,7 +106,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         assert relative_to.__class__ == self.__class__, \
                 'relative_to should be of type %s but is of type %s' % (self.__class__, relative_to.__class__)
             
-        maxviews = relative_to.aggregate(Max('views'))['views__max']
+        maxviews = relative_to.aggregate(models.Max('views'))['views__max']
         
         SQL_RELVIEWS = self._SQL_RELVIEWS % {'maxviews' : maxviews}
         
@@ -191,7 +190,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
 
         SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
 
-        maxpopularity = relative_to.extra(select={'popularity' : SQL_POPULARITY}).aggregate(Max('popularity'))['popularity__max']
+        maxpopularity = relative_to.extra(select={'popularity' : SQL_POPULARITY}).aggregate(models.Max('popularity'))['popularity__max']
         
         SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
                                                        'maxpopularity' : maxpopularity }
@@ -222,7 +221,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         
         SQL_POPULARITY = self._SQL_POPULARITY % {'age' : _SQL_AGE }
         
-        maxpopularity = relative_to.extra(select={'popularity' : SQL_POPULARITY}).aggregate(Max('popularity'))['popularity__max']
+        maxpopularity = relative_to.extra(select={'popularity' : SQL_POPULARITY}).aggregate(models.Max('popularity'))['popularity__max']
         
         SQL_RELPOPULARITY = self._SQL_RELPOPULARITY % {'popularity'    : SQL_POPULARITY,
                                                        'maxpopularity' : maxpopularity }
@@ -268,7 +267,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         
         assert abs(relview+relage+novelty+relpopularity+random+relevance) > 0, 'You should at least give me something to order by!'
         
-        maxviews = relative_to.aggregate(Max('views'))['views__max']
+        maxviews = relative_to.aggregate(models.Max('views'))['views__max']
         
         SQL_RELVIEWS = self._SQL_RELVIEWS % {'maxviews' : maxviews}
         
