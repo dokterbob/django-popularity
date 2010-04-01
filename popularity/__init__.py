@@ -28,9 +28,11 @@ VERSION = (0, 1, None)
 def post_save_handler(signal, sender, instance, created, raw, **kwargs):
     if created:
         ct = ContentType.objects.get_for_model(sender)
-        assert ViewTracker.objects.filter(content_type=ct, object_id=instance.pk).count() == 0, 'A ViewTracker already existst for %s.' % instance
-        v=ViewTracker(content_type=ct, object_id=instance.pk).save()
-        logging.debug('%s automatically created for object %s' % (v, instance))
+        if ViewTracker.objects.filter(content_type=ct, object_id=instance.pk).count() == 0:
+            v=ViewTracker(content_type=ct, object_id=instance.pk).save()
+            logging.debug('%s automatically created for object %s' % (v, instance))
+        else:
+            logging.warn('A ViewTracker already existst for %s.' % instance)
 
 def pre_delete_handler(signal, sender, instance, **kwargs):
     ct = ContentType.objects.get_for_model(sender)
