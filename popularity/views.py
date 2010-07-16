@@ -24,7 +24,7 @@ from django.utils import simplejson
 
 from models import ViewTracker
 
-def add_view_for(request, content_type_id, object_id):
+def view_for(request, content_type_id, object_id):
     response_dict= {}
 
     ct = ContentType.objects.get(pk=content_type_id)
