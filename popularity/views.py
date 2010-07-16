@@ -29,12 +29,12 @@ def add_view_for(request, content_type_id, object_id):
 
     ct = ContentType.objects.get(pk=content_type_id)
     myobject = ct.get_object_for_this_type(pk=object_id)
+    
+    if request.method == "POST":
+        logging.debug('Adding view for %s through web.', myobject)
+        ViewTracker.add_view_for(myobject)
 
-    logging.debug('Adding view for %s through web.', myobject)
-
-    ViewTracker.add_view_for(myobject)
     tracker = ViewTracker.get_views_for(myobject)
-
     response_dict.update({'success': True, 'tracker': tracker})
 
     if request.is_ajax():
