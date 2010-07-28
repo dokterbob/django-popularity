@@ -19,16 +19,20 @@
 import logging
 
 from django.contrib.contenttypes.models import ContentType
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseGone
 from django.utils import simplejson
+from django.core.exceptions import ObjectDoesNotExist
 
 from models import ViewTracker
 
 def view_for(request, content_type_id, object_id):
     response_dict= {}
 
-    ct = ContentType.objects.get(pk=content_type_id)
-    myobject = ct.get_object_for_this_type(pk=object_id)
+    try:
+        ct = ContentType.objects.get(pk=content_type_id)
+        myobject = ct.get_object_for_this_type(pk=object_id)
+    except ObjectDoesNotExist:
+        return HttpResponseGone()
     
     if request.method == "POST":
         logging.debug('Adding view for %s through web.', myobject)
