@@ -41,12 +41,12 @@ def view_for(request, content_type_id, object_id, force_add=False):
     tracker = ViewTracker.get_views_for(myobject)
     
     response_dict.update({
-        'success': True,
         'views': tracker,
     })
 
     if request.is_ajax():
-        return HttpResponse(simplejson.dumps(response_dict), mimetype='application/javascript')
+        return HttpResponse(simplejson.dumps(response_dict), 
+                            mimetype='application/javascript')
 
     return HttpResponse()
 
