@@ -25,7 +25,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from models import ViewTracker
 
-def view_for(request, content_type_id, object_id):
+def view_for(request, content_type_id, object_id, force_add=False):
     response_dict= {}
 
     try:
@@ -34,7 +34,7 @@ def view_for(request, content_type_id, object_id):
     except ObjectDoesNotExist:
         return HttpResponseGone()
     
-    if request.method == "POST":
+    if force_add or request.method == "POST":
         logging.debug('Adding view for %s through web.', myobject)
         ViewTracker.add_view_for(myobject)
 
@@ -48,4 +48,6 @@ def view_for(request, content_type_id, object_id):
         return HttpResponse(simplejson.dumps(response_dict), mimetype='application/javascript')
 
     return HttpResponse()
-    
+
+def add_view_for(request, content_type_id, object_id):
+    return view_for(request, content_type_id, object_id, force_add=True)
