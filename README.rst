@@ -234,6 +234,7 @@ Major and minor contributions to this project were made by:
 
 - Daniel Nordberg <dnordberg@gmail.com>
 - Mark Lavin <markdlavin@gmail.com>
+- Sébastien Fievet (hyperweek on GitHub)
 
 License
 =======
