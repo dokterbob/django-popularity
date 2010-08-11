@@ -24,6 +24,7 @@ from datetime import datetime
 
 from django.test import TestCase
 from django.template import Context, Template
+from django.core.urlresolvers import reverse
 from django.contrib.contenttypes.models import ContentType
 
 from popularity.models import *
@@ -238,32 +239,61 @@ class PopularityTestCase(unittest.TestCase):
 
 
 class ViewTestCase(TestCase):
-    urls = 'popularity.urls'
+    def failUnlessViewsEqual(self, obj, views, increment=False):
+        ct = ContentType.objects.get_for_model(obj)
+        url = reverse('popularity:view_for', ct.id, obj.id)
+
+        tracker_views = ViewTracker.get_views_for(obj)
+        self.failUnlessEqual(tracker_views, views)
     
-    def setUp(self):
-        self.obj = TestObject(title='View obj a')
-        self.obj.save()
-    
-    def testViewFor(self):
-        from django.utils import simplejson
+        # Non-AJAX request
+        if increment:
+            response = self.client.post(url)
+            self.failUnlessEqual(response.content, views+1)
+        else:
+            response = self.client.get(url)
+            self.failUnlessEqual(response.content, views)
         
-        ct = ContentType.objects.get_for_model(TestObject)
-        
-        # GET call
-        response = self.client.get('/%d/%d/' % (ct.id, self.obj.id))
         self.failUnlessEqual(response.status_code, 200)
-        
-        # POST call
-        response = self.client.post('/%d/%d/' % (ct.id, self.obj.id))
-        self.failUnlessEqual(response.status_code, 200)
-        
-        # AJAX call
+       
+        # AJAX request
         headers = { 'HTTP_X_REQUESTED_WITH':'XMLHttpRequest' }
-        response = self.client.get('/%d/%d/' % (ct.id, self.obj.id), **headers)
+        if increment:
+            response = self.client.post(url, **headers)
+            
+            response_dict = simplejson.loads(response.content)
+            self.failUnlessEqual(response_dict.get('views'), views+2)
+
+        else:
+            response = self.client.get(url, **headers)
+
+            response_dict = simplejson.loads(response.content)
+            self.failUnlessEqual(response_dict.get('views'), views)
+
+
         self.failUnlessEqual(response.status_code, 200)
-        
-        response_dict = simplejson.loads(response.content)
-        self.failUnlessEqual(response_dict.get('views'), 1)
+
+    def testGetViewsFor(self):
+        # Test GET requests for random number of views
+
+        for x in xrange(REPEAT_COUNT): 
+            obj_views = random.randint(1, REPEAT_COUNT*10)
+ 
+            obj = TestObject(title='View obj a', views=obj_views)
+            obj.save()
+
+            self.failUnlessViewsEqual(obj, obj_views)
+
+    def testUpdateViewsFor(self):
+        # Test POST requests for random number of views
+
+        for x in xrange(REPEAT_COUNT): 
+            obj_views = random.randint(1, REPEAT_COUNT*10)
+ 
+            obj = TestObject(title='View obj a', views=obj_views)
+            obj.save()
+
+            self.failUnlessViewsEqual(obj, obj_views, increment=True)
 
 
 class TemplateTagsTestCase(unittest.TestCase):        
