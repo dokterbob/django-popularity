@@ -21,5 +21,5 @@ from django.conf.urls.defaults import *
 from views import view_for
 
 urlpatterns = patterns('',
-    url(r'^(?P<content_type_id>\d+)/(?P<object_id>\d+)/$', view_for, name="popularity-view-for"),
+    url(r'^(?P<content_type_id>\d+)/(?P<object_id>\d+)/$', view_for, name="view-for"),
 )
