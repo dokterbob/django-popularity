@@ -28,9 +28,9 @@ from django.contrib.contenttypes.models import ContentType
 
 from popularity.models import *
 
-REPEAT_COUNT = 3
+REPEAT_COUNT = 2
 MAX_SECONDS = 2
-NUM_TESTOBJECTS = 21
+NUM_TESTOBJECTS = 3
 
 from django.db import models
 
