@@ -22,6 +22,7 @@ import unittest
 from time import sleep
 from datetime import datetime
 
+from django.test import TestCase
 from django.template import Context, Template
 from django.contrib.contenttypes.models import ContentType
 
@@ -48,7 +49,7 @@ class PopularityTestCase(unittest.TestCase):
     def random_view(self):
         ViewTracker.add_view_for(random.choice(self.objs))
         
-    def setUp(self):        
+    def setUp(self):
         TestObject(title='Obj a').save()
         TestObject(title='Obj b').save()
         TestObject(title='Obj c').save()
@@ -235,7 +236,35 @@ class PopularityTestCase(unittest.TestCase):
                 self.assert_(tracker.relage >= 0.)
                 self.assert_(tracker.relage <= 1.)
 
+
+class ViewTestCase(TestCase):
+    urls = 'popularity.urls'
+    
+    def setUp(self):
+        self.obj = TestObject(title='View obj a')
+        self.obj.save()
+    
+    def testViewFor(self):
+        from django.utils import simplejson
         
+        ct = ContentType.objects.get_for_model(TestObject)
+        
+        # GET call
+        response = self.client.get('/%d/%d/' % (ct.id, self.obj.id))
+        self.failUnlessEqual(response.status_code, 200)
+        
+        # POST call
+        response = self.client.post('/%d/%d/' % (ct.id, self.obj.id))
+        self.failUnlessEqual(response.status_code, 200)
+        
+        # AJAX call
+        headers = { 'HTTP_X_REQUESTED_WITH':'XMLHttpRequest' }
+        response = self.client.get('/%d/%d/' % (ct.id, self.obj.id), **headers)
+        self.failUnlessEqual(response.status_code, 200)
+        
+        response_dict = simplejson.loads(response.content)
+        self.failUnlessEqual(response_dict.get('views'), 1)
+
 
 class TemplateTagsTestCase(unittest.TestCase):        
     def setUp(self):
