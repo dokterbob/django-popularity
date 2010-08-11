@@ -115,11 +115,21 @@ Installation
     equally good. If you have a preference for either one, please let me know
     because two options to do exactly the same sounds like overhead to me.
     
-    **Lastly**, django-popularity has recently been extended with a beautiful AJAX way
+    **Lastly**, django-popularity has recently been extended with a direct way
     to register views for an object. This is useful for interactive scripted
-    ways of viewing objects, for instance for registering views of movies. As of now it
-    is still very much a work in progress but it seems to work quite well.
-    (But are, however, much welcomed by the author.)
+    ways of viewing objects, for instance for registering movie plays.
+
+    This view also has an AJAX feature, allowing one to request the number of
+    views for a specific object. There are three ways to use this view:
+
+    #)  Use a normal GET request will simply return the number of views as
+        plaintext.
+
+    #)  Use an AJAX GET request to retrieve the number of views in JSON form,
+        the result of which looks like: `{'views': <viewcount>}`
+
+    #)  Any POST request will return the same information but will also
+        increase the view count.
     
     To use this, add the following to your `urls.py`::
     
@@ -129,11 +139,11 @@ Installation
 	    ...
 	)
     
-    You can now register views by requesting the url `/viewtracker/<content_type_id>/<object_id>/`
+    You can now make register views by requesting the url `/viewtracker/<content_type_id>/<object_id>/`
     which is facilitated by two lines of JavaScript (using something like jQuery)::
     
 	function add_view_for(content_type_id, object_id) {
-	    $.get('/viewtracker/' + content_type_id + '/' + object_id+'/')
+	    $.post('/viewtracker/' + content_type_id + '/' + object_id+'/')
 	}
     
     To facilitate the useage of this there is a template tag::
