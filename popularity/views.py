@@ -39,9 +39,10 @@ def view_for(request, content_type_id, object_id, force_add=False):
         ViewTracker.add_view_for(myobject)
 
     tracker = ViewTracker.get_views_for(myobject)
+    
     response_dict.update({
         'success': True,
-        'views': ViewTracker.get_views_for(myobject),
+        'views': tracker,
     })
 
     if request.is_ajax():
@@ -51,3 +52,4 @@ def view_for(request, content_type_id, object_id, force_add=False):
 
 def add_view_for(request, content_type_id, object_id):
     return view_for(request, content_type_id, object_id, force_add=True)
+
