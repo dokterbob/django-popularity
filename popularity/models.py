@@ -23,7 +23,7 @@ from datetime import datetime
 from math import log
 
 from django.db import models, connection
-from django.db.models.expressions import *
+from django.db.models.expressions import F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
