@@ -65,7 +65,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     def _get_db_datetime(self, value=None):
         """ Retrieve an SQL-interpretable representation of the datetime value, or
             now if no value is specified. """
-        assert self.DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
+        assert self._DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         if not value:
             value = datetime.now()
@@ -87,7 +87,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     def select_age(self):
         """ Adds age with regards to NOW to the QuerySet
             fields. """
-        assert self.DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
+        assert self._DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
         
@@ -99,7 +99,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             in the current QuerySet, unless specified in 'relative_to'.
             
             The relative number of views should always in the range [0, 1]. """
-        assert self.DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
+        assert self._DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         if not relative_to:
             relative_to = self
@@ -119,7 +119,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             in the current QuerySet, unless specified in 'relative_to'.
 
             The relative age should always in the range [0, 1]. """
-        assert self.DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
+        assert self._DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         if not relative_to:
             relative_to = self
@@ -144,7 +144,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             is used in multiplication.
             
             The novelty value is always in the range [0, 1]. """
-        assert self.DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
+        assert self._DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         offset = minimum
         factor = 1/(1-offset)
@@ -166,7 +166,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     
     def select_popularity(self):
         """ Compute popularity, which is defined as: views/age. """
-        assert self.DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
+        assert self._DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         _SQL_AGE = self._SQL_AGE % {'now' : self._get_db_datetime() }
         
@@ -179,7 +179,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             
             The relpopularity value should always be in the range [0, 1]. """
 
-        assert self.DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
+        assert self._DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         if not relative_to:
             relative_to = self
@@ -202,7 +202,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
         """ Returns the original QuerySet with an extra field 'random' containing a random
             value in the range [0,1] to use for ordering.
         """
-        assert self.DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
+        assert self._DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         SQL_RANDOM = self.RANDOM
         
@@ -210,7 +210,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
     
     def select_relevance(relative_to=None, minimum_novelty=0.1, charage_novelty=None):
         """ This adds the multiplication of novelty and relpopularity to the QuerySet, as 'relevance'. """
-        assert self.DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
+        assert self._DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         if not relative_to:
             relative_to = self
@@ -258,7 +258,7 @@ class ViewTrackerQuerySet(models.query.QuerySet):
             Please do note that the relative age is the only value here that INCREASES over time so
             you might want to specify a NEGATIVE value here and use an offset, just to compensate. 
         """
-        assert self.DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
+        assert self._DATABASE_ENGINE in COMPATIBLE_DATABASES, 'Database engine %s is not compatible with this functionality.'
         
         if not relative_to:
             relative_to = self
