@@ -22,6 +22,11 @@ from django.db.models import get_model
 from popularity.models import ViewTracker
 from django.contrib.contenttypes.models import ContentType
 
+try:
+    from popularity.tasks import viewtrack as viewtrack_task
+except ImportError:
+    viewtrack_task = None # Celery wasn't found
+
 register = template.Library()
 
 @register.filter
@@ -32,6 +37,17 @@ def viewtrack(value):
     '''
     ct = ContentType.objects.get_for_model(value)
     return 'add_view_for(%d,%d)' % (ct.pk, value.pk)
+
+@register.simple_tag
+def viewtrack_async(instance, request):
+    if viewtrack_task == None:
+        raise Exception("You must install celery to use this templatetag")
+    ''' Like above, except it fires off a task which upticks the views
+        (for those that need it super-fast). Also takes into consideration IP address
+        to eliminate refresh-duplications
+    '''
+    ct = ContentType.objects.get_for_model(instance)
+    viewtrack_task.apply_async(args=[ct.pk, instance.pk, request.META.get('REMOTE_ADDR')])
 
 def validate_template_tag_params(bits, arguments_count, keyword_positions):
     '''

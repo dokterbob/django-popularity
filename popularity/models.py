@@ -26,6 +26,7 @@ from django.db import models, connection
 from django.db.models.expressions import F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
+from django.core.cache import cache
 
 # Settings for popularity:
 # - POPULARITY_LISTSIZE; default size of the lists returned by get_most_popular etc.
@@ -529,10 +530,23 @@ class ViewTracker(models.Model):
         """ Gets the total number of views for content_object. """
         
         """ If we don't have any views, return 0. """
-        try:
-            viewtracker = cls.objects.get_for_object(content_object)
-        except ViewTracker.DoesNotExist:
-            return 0 
-        
-        return viewtracker.views
 
+        cache_timeout = getattr(settings, 'POPULARITY_CACHE_VIEW_TIMEOUT',False)
+
+        if cache_timeout:
+            ct = ContentType.objects.get_for_model(content_object)
+            CACHE_KEY = 'popularity-viewcount-%s-%s' % (ct.pk, content_object.pk)
+
+            cached_val = cache.get(CACHE_KEY)
+
+            if cached_val:
+                return cached_val
+                
+                
+        try:
+            view_count = cls.objects.get_for_object(content_object).views or 0
+        except ViewTracker.DoesNotExist:
+            view_count = 0
+        
+        if cache_timeout: # Above we got CACHE_KEY
+            cache.set(CACHE_KEY, view_count, cache_timeout)
