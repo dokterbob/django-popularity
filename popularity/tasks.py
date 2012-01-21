@@ -1,5 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
+from djangon.core.cache import cache
 
 from celery.decorators import task
 
