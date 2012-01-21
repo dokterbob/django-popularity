@@ -542,7 +542,6 @@ class ViewTracker(models.Model):
             if cached_val:
                 return cached_val
                 
-                
         try:
             view_count = cls.objects.get_for_object(content_object).views or 0
         except ViewTracker.DoesNotExist:
@@ -550,3 +549,5 @@ class ViewTracker(models.Model):
         
         if cache_timeout: # Above we got CACHE_KEY
             cache.set(CACHE_KEY, view_count, cache_timeout)
+
+        return view_count
