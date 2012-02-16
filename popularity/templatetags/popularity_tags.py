@@ -48,6 +48,7 @@ def viewtrack_async(instance, request):
     '''
     ct = ContentType.objects.get_for_model(instance)
     viewtrack_task.apply_async(args=[ct.pk, instance.pk, request.META.get('REMOTE_ADDR')])
+    return ''
 
 def validate_template_tag_params(bits, arguments_count, keyword_positions):
     '''
@@ -64,6 +65,8 @@ def validate_template_tag_params(bits, arguments_count, keyword_positions):
         value = keyword_positions[pos]
         if bits[pos] != value:
             raise template.TemplateSyntaxError("argument #%d to '%s' tag must be '%s'" % (pos, bits[0], value))
+
+    return ''
 
 # Nodes
 
