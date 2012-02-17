@@ -23,7 +23,7 @@ from django.db.models.signals import post_save, pre_delete
 
 from models import ViewTracker
 
-VERSION = (0, 1, None)
+VERSION = (0, 2, None)
 
 def post_save_handler(signal, sender, instance, created, raw, **kwargs):
     if created:
