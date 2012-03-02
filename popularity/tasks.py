@@ -1,3 +1,4 @@
+import logging
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.core.cache import cache
@@ -20,6 +21,7 @@ def viewtrack(ct,pk,ip_address):
         EXPIRE_KEY = 'popularity-view-%s-%s-%s' % (ct.pk, instance.pk, ip_address) 
 
         if cache.get(EXPIRE_KEY):
+            logging.debug("Foregoing view, recent key found")
             return # Don't add a view, they're revisiting too soon
 
         cache.set(EXPIRE_KEY, 1, EXPIRE_TIME) # 1 == just needs some value
