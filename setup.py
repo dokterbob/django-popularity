@@ -25,7 +25,7 @@ except:
 
 setup(
     name = 'django-popularity',
-    version = "0.1.5",
+    version = "0.1.6",
     description = 'A generic view- and popularity tracking pluggable for Django.',
     long_description = README,
     author = 'Mathijs de Bruin',
