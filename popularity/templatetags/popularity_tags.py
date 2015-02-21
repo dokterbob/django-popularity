@@ -48,8 +48,8 @@ def viewtrack_async(instance, request):
     '''
     ct = ContentType.objects.get_for_model(instance)
     ip = request.META.get('HTTP_X_FORWARDED_FOR') or request.META.get('REMOTE_ADDR')
-    if isinstance(ip, list):
-        ip = ip[0[]
+    if len(ip.split(",")) > 1:
+        ip = ip.split(",")[0]
     viewtrack_task.apply_async(args=[ct.pk, instance.pk, ip])
     return ''
 
