@@ -47,7 +47,8 @@ def viewtrack_async(instance, request):
         to eliminate refresh-duplications
     '''
     ct = ContentType.objects.get_for_model(instance)
-    viewtrack_task.apply_async(args=[ct.pk, instance.pk, request.META.get('REMOTE_ADDR')])
+    ip = request.META.get('HTTP_X_FORWARDED_FOR') or request.META.get('REMOTE_ADDR')
+    viewtrack_task.apply_async(args=[ct.pk, instance.pk, ip])
     return ''
 
 def validate_template_tag_params(bits, arguments_count, keyword_positions):
