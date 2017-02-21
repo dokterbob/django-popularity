@@ -2,6 +2,7 @@ import logging
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.core.cache import cache
+from django.core.validators import validate_ipv46_address
 
 from celery.decorators import task
 
@@ -21,6 +22,9 @@ def viewtrack(ct, pk, ip_address):
 
     EXPIRE_TIME = getattr(settings, 'POPULARITY_VIEW_DELAY', 300)
     if EXPIRE_TIME is not False:  # They expicitly don't want any delay
+        if "," in ip_address:
+            ip_address = ip_address.split(",")[-1].strip()
+        validate_ipv46_address(ip_address)
         EXPIRE_KEY = u'popularity-view-%s-%s-%s' % (ct.pk, instance.pk, ip_address)
         log.info(u"%s / %s / %s/ %s" % (EXPIRE_KEY, ct.pk, instance.pk, ip_address))
 
