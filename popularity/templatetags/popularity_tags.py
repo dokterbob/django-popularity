@@ -18,6 +18,7 @@
 
 from django import template
 from django.apps import apps
+from django.core.validators import validate_ipv46_address
 
 from popularity.models import ViewTracker
 from django.contrib.contenttypes.models import ContentType
@@ -51,7 +52,8 @@ def viewtrack_async(instance, request):
     ct = ContentType.objects.get_for_model(instance)
     ip = request.META.get('HTTP_X_FORWARDED_FOR') or request.META.get('REMOTE_ADDR')
     if len(ip.split(",")) > 1:
-        ip = ip.split(",")[0]
+        ip = ip.split(",")[-1].strip()
+    validate_ipv46_address(ip)
     viewtrack_task.apply_async(args=[ct.pk, instance.pk, ip])
     return ''
 
