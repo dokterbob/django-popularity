@@ -38,7 +38,7 @@ def viewtrack(value):
 
 @register.simple_tag
 def viewtrack_async(instance, request):
-    viewtrack_util(request)
+    viewtrack_util(request, instance)
     return ''
 
 
