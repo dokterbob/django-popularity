@@ -18,7 +18,10 @@ def viewtrack(ct, pk, ip_address):
         You can expire it to your specification, 300 (5 minutes) is pretty good though
     '''
     ct = ContentType.objects.get(pk=ct)
-    instance = ct.model_class().objects.get(pk=pk)
+    try:
+        instance = ct.model_class().objects.get(pk=pk)
+    except ct.model_class().DoesNotExist:
+        return  # Its gone, deal with it (⌐■_■)
 
     EXPIRE_TIME = getattr(settings, 'POPULARITY_VIEW_DELAY', 300)
     if EXPIRE_TIME is not False:  # They expicitly don't want any delay
