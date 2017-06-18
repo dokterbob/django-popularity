@@ -21,7 +21,7 @@ def viewtrack(ct, pk, ip_address):
     try:
         instance = ct.model_class().objects.get(pk=pk)
     except ct.model_class().DoesNotExist:
-        return  # Its gone, deal with it (⌐■_■)
+        return  # Its gone, deal with it
 
     EXPIRE_TIME = getattr(settings, 'POPULARITY_VIEW_DELAY', 300)
     if EXPIRE_TIME is not False:  # They expicitly don't want any delay
