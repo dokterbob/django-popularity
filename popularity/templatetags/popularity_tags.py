@@ -70,7 +70,7 @@ class ViewsForObjectNode(template.Node):
 
     def render(self, context):
         try:
-            object = template.resolve_variable(self.object, context)
+            object = template.Variable(self.object).resolve(context)
         except template.VariableDoesNotExist:
             return ''
         context[self.context_var] = ViewTracker.get_views_for(object)
@@ -84,7 +84,7 @@ class ViewsForObjectsNode(template.Node):
 
     def render(self, context):
         try:
-            objects = template.resolve_variable(self.objects, context)
+            objects = template.Variable(self.objects).resolve(context)
         except template.VariableDoesNotExist:
             return ''
 
