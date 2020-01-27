@@ -486,7 +486,7 @@ class ViewTracker(models.Model):
     """ The ViewTracker object does exactly what it's supposed to do:
         track the amount of views for an object in order to create make 
         a popularity rating."""
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, on_delete=models.PROTECT)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
     added = models.DateTimeField(auto_now_add=True)
