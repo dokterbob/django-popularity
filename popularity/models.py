@@ -425,7 +425,7 @@ class ViewTrackerManager(models.Manager):
     """
     
     def get_query_set(self):
-		return ViewTrackerQuerySet(self.model)
+        return ViewTrackerQuerySet(self.model)
         
     def select_age(self, *args, **kwargs):
         return self.get_query_set().select_age(*args, **kwargs)
